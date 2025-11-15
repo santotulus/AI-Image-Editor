@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Image Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for file input */
+        .file-input-label {
+            transition: all 0.2s ease-in-out;
+        }
+        .file-input-label:hover {
+            border-color: #4f46e5;
+            background-color: #f0f2ff;
+        }
+        /* Spinner animation */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            border-top-color: #4f46e5;
+            animation: spin 1s linear infinite;
+        }
+        /* Prevent layout shift */
+        .results-grid {
+            min-height: 400px;
+        }
+        /* Fade-in animation for results */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.22.0",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div id="root" class="relative min-h-screen md:flex">
+        <!-- Mobile menu bar -->
+        <div class="bg-slate-900 text-gray-100 flex justify-between md:hidden">
+          <a href="#" class="block p-4 text-white font-bold">Brew Snapwest</a>
+          <button id="mobile-menu-button" class="p-4 focus:outline-none focus:bg-slate-800">
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="bg-slate-900 text-slate-100 w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out z-20">
+            <!-- Logo -->
+            <a href="#" class="text-white flex items-center space-x-2 px-4">
+                <svg class="w-8 h-8 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>              
+                <span class="text-2xl font-extrabold">Brew Snapwest</span>
+            </a>
+
+            <!-- Navigation -->
+            <nav>
+                <a href="#" id="nav-product-btn" class="flex items-center space-x-3 py-2.5 px-4 rounded transition duration-200 bg-indigo-600 text-white">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.776 48.776 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                      </svg>
+                      <span>Photo Produk</span>
+                </a>
+                <a href="#" id="nav-model-btn" class="flex items-center space-x-3 py-2.5 px-4 rounded transition duration-200 hover:bg-slate-800">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                    <span>Photo Model</span>
+                </a>
+                <a href="#" id="nav-pas-photo-btn" class="flex items-center space-x-3 py-2.5 px-4 rounded transition duration-200 hover:bg-slate-800">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5a15.75 15.75 0 0 1 15 0" />
+                    </svg>
+                    <span>Pas Photo</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1">
+            <div id="product-generator-page">
+                <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+                    <!-- Header -->
+                    <header class="text-center mb-8">
+                        <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Product Image Generator</h1>
+                        <p class="mt-2 text-lg text-slate-600">Buat foto produk yang menakjubkan dengan model dalam hitungan detik.</p>
+                    </header>
+            
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <!-- Left Panel: Controls -->
+                        <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                            <form id="generation-form">
+                                <!-- 1. Upload Product -->
+                                <div class="mb-6">
+                                    <label class="block text-lg font-semibold mb-2 text-slate-700">1. Unggah Gambar</label>
+                                    <label for="product-upload" class="file-input-label flex flex-col items-center justify-center w-full h-48 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50">
+                                        <div id="upload-prompt" class="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                                            <svg class="w-8 h-8 mb-4 text-slate-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                                            </svg>
+                                            <p class="mb-2 text-sm text-slate-500"><span class="font-semibold">Klik untuk mengunggah</span></p>
+                                            <p class="text-xs text-slate-500">PNG atau JPG</p>
+                                        </div>
+                                        <img id="image-preview" src="#" alt="Pratinjau Produk" class="hidden h-full w-full object-contain rounded-lg"/>
+                                        <input id="product-upload" type="file" class="hidden" accept="image/png, image/jpeg" />
+                                    </label>
+                                </div>
+            
+                                <!-- 2. Kustomisasi -->
+                                <div class="mb-6">
+                                    <label class="block text-lg font-semibold mb-3 text-slate-700">2. Kustomisasi</label>
+                                    
+                                    <div class="flex items-center mb-4 pl-1">
+                                        <input id="custom-prompt-checkbox" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                        <label for="custom-prompt-checkbox" class="ml-2 block text-sm font-medium text-slate-800">Gunakan Prompt Sendiri (Advanced)</label>
+                                    </div>
+                
+                                    <div id="custom-prompt-container" class="hidden mb-4">
+                                        <label for="custom-prompt-input" class="block text-sm font-medium text-slate-600 mb-1">Prompt Kustom Anda</label>
+                                        <textarea id="custom-prompt-input" rows="5" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: Jadikan ini foto studio yang profesional..."></textarea>
+                                    </div>
+            
+                                    <fieldset id="guided-options">
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label for="upload-type" class="block text-sm font-medium text-slate-600 mb-1">Jenis Unggahan</label>
+                                                <select id="upload-type" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                    <option value="finished_product">Produk Jadi</option>
+                                                    <option value="fabric">Bahan / Pola Kain</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div id="product-name-container">
+                                                <label for="product-name" class="block text-sm font-medium text-slate-600 mb-1">Nama Produk Jadi</label>
+                                                <input type="text" id="product-name" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: Kemeja, Gamis, Sarung">
+                                                <p class="text-xs text-slate-500 mt-1">Hanya isi jika Anda mengunggah bahan/kain.</p>
+                                            </div>
+            
+                                            <div id="product-desc-container">
+                                                <label for="product-description" class="block text-sm font-medium text-slate-600 mb-1">Deskripsi Produk (Opsional)</label>
+                                                <input type="text" id="product-description" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: jilbab, sarung, minuman kemasan, kopi instan">
+                                                <p class="text-xs text-slate-500 mt-1">Jelaskan ukuran atau detail penting untuk hasil akurat.</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center my-4 pl-1">
+                                            <input id="without-model" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                            <label for="without-model" class="ml-2 block text-sm font-medium text-slate-800">Tanpa Model (Foto Produk Studio)</label>
+                                        </div>
+
+                                        <div id="lighting-container" class="hidden space-y-4 mb-4">
+                                            <div>
+                                                <label for="lighting-select" class="block text-sm font-medium text-slate-600 mb-1">Pencahayaan</label>
+                                                <select id="lighting-select" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                    <option value="light">Light</option>
+                                                    <option value="dark">Dark</option>
+                                                </select>
+                                            </div>
+                                        </div>
+            
+                                        <!-- Model Source Selection -->
+                                        <div id="model-source-container" class="flex space-x-4 mb-4">
+                                            <div>
+                                                <input type="radio" id="generate-model-radio" name="model-source" value="generate" checked class="h-4 w-4 border border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                                <label for="generate-model-radio" class="ml-2 text-sm font-medium text-slate-800">Hasilkan Model</label>
+                                            </div>
+                                            <div>
+                                                <input type="radio" id="upload-model-radio" name="model-source" value="upload" class="h-4 w-4 border border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                                <label for="upload-model-radio" class="ml-2 text-sm font-medium text-slate-800">Unggah Model Sendiri</label>
+                                            </div>
+                                        </div>
+            
+                                        <!-- Model Upload Section -->
+                                        <div id="upload-model-section" class="hidden mb-6">
+                                            <label class="block text-sm font-medium text-slate-600 mb-1">Unggah Foto Model</label>
+                                            <label for="model-upload" class="file-input-label flex flex-col items-center justify-center w-full h-48 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50">
+                                                <div id="model-upload-prompt" class="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                                                    <svg class="w-8 h-8 mb-4 text-slate-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                                                    </svg>
+                                                    <p class="mb-2 text-sm text-slate-500"><span class="font-semibold">Klik untuk mengunggah model</span></p>
+                                                    <p class="text-xs text-slate-500">PNG atau JPG</p>
+                                                </div>
+                                                <img id="model-image-preview" src="#" alt="Pratinjau Model" class="hidden h-full w-full object-contain rounded-lg"/>
+                                                <input id="model-upload" type="file" class="hidden" accept="image/png, image/jpeg" />
+                                            </label>
+                                        </div>
+                                        
+                                        <!-- Model Customization Options (shared or specific) -->
+                                        <div id="shared-model-options" class="space-y-4 transition-opacity duration-300">
+                                            <div>
+                                                <label for="photo-style" class="block text-sm font-medium text-slate-600 mb-1">Gaya & Latar</label>
+                                                <select id="photo-style" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                    <option value="A natural, casual, everyday setting.">Kasual / Sehari-hari</option>
+                                                    <option value="A clean, neat, elegant, formal setting, suitable for premium products.">Formal / Elegan</option>
+                                                    <option value="An outdoor setting like a park, street, or beach.">Outdoor</option>
+                                                    <option value="An indoor studio setting with a plain background and professional studio lighting.">Indoor / Studio</option>
+                                                    <option value="A lifestyle setting, showing activity like drinking coffee, reading a book, or walking.">Lifestyle</option>
+                                                    <option value="A family or group photo (father, mother, child), suitable for family set products.">Keluarga / Group</option>
+                                                    <option value="A stylish, fashion magazine lookbook style.">Trendy / Fashion Lookbook</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label for="model-pose" class="block text-sm font-medium text-slate-600 mb-1">Pose Model</label>
+                                                <select id="model-pose" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                    <option value="standing straight">Berdiri Tegak</option>
+                                                    <option value="sitting down">Duduk</option>
+                                                    <option value="posing sideways">Menyamping</option>
+                                                    <option value="walking">Berjalan</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label for="clothing-attributes" class="block text-sm font-medium text-slate-600 mb-1">Pakaian</label>
+                                                <select id="clothing-attributes" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                    <option value="wearing modern casual clothing">Casual Modern</option>
+                                                    <option value="wearing a hijab">Berhijab</option>
+                                                    <option value="not wearing a hijab">Tidak Berhijab</option>
+                                                    <option value="wearing a gamis (long tunic)">Gamis</option>
+                                                    <option value="wearing a Baju Muslim (Muslim attire)">Baju Muslim</option>
+                                                    <option value="wearing a Baju Koko (Muslim men's shirt)">Baju Koko Muslim</option>
+                                                    <option value="wearing matching family outfits">Pakaian Keluarga Seragam</option>
+                                                    <option value="wearing traditional Indonesian attire">Baju Adat / Tradisional</option>
+                                                    <option value="wearing elegant Muslimah fashion">Busana Muslimah Elegan</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label for="additional-attributes" class="block text-sm font-medium text-slate-600 mb-1">Atribut Tambahan</label>
+                                                <select id="additional-attributes" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                    <option value="">Tanpa Atribut</option>
+                                                    <option value="wearing a peci (islamic cap)">Peci</option>
+                                                    <option value="holding the Al Quran">Al Quran</option>
+                                                    <option value="wearing shoes">Sepatu</option>
+                                                    <option value="wearing a watch">Jam Tangan</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label for="interaction-type" class="block text-sm font-medium text-slate-600 mb-1">Jenis Interaksi</label>
+                                                <select id="interaction-type" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                    <option value="holding">Memegang / Membawa</option>
+                                                    <option value="wearing">Memakai</option>
+                                                    <option value="none">Tanpa Interaksi</option>
+                                                    <option value="custom">Input Sendiri...</option>
+                                                </select>
+                                            </div>
+                                            <div id="custom-interaction-container" class="hidden">
+                                                <label for="custom-interaction-input" class="block text-sm font-medium text-slate-600 mb-1">Jelaskan Interaksinya</label>
+                                                <input type="text" id="custom-interaction-input" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: bersandar pada produk">
+                                            </div>
+                                            <div>
+                                                <label for="focus-level" class="block text-sm font-medium text-slate-600 mb-1">Tingkat Fokus</label>
+                                                <select id="focus-level" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                    <option value="full body shot">Keseluruhan Badan</option>
+                                                    <option value="medium shot, from the waist up, focusing on the upper body clothing">Setengah Badan (Fokus Baju/Atasan)</option>
+                                                    <option value="shot from the waist down, focusing on the pants or sarong">Bagian Bawah (Fokus Celana/Sarung)</option>
+                                                    <option value="close-up shot of the feet, focusing on the shoes">Close-up Kaki (Fokus Sepatu)</option>
+                                                </select>
+                                            </div>
+                                            <!-- Model Generation Options -->
+                                            <div id="model-options-generate" class="space-y-4">
+                                                <div>
+                                                    <label for="gender" class="block text-sm font-medium text-slate-600 mb-1">Jenis Kelamin</label>
+                                                    <select id="gender" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                        <option value="woman">Dewasa Perempuan</option>
+                                                        <option value="man">Dewasa Laki-laki</option>
+                                                        <option value="girl">Anak Perempuan</option>
+                                                        <option value="boy">Anak Laki-laki</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label for="ethnicity" class="block text-sm font-medium text-slate-600 mb-1">Etnis</label>
+                                                    <select id="ethnicity" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                        <option value="Southeast Asian / Indonesian">Asia / Indonesia</option>
+                                                        <option value="European">Eropa</option>
+                                                        <option value="Latin American">Amerika Latin</option>
+                                                        <option value="African">Afrika</option>
+                                                        <option value="Middle Eastern / Arab">Timur Tengah / Arab</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label for="age-range" class="block text-sm font-medium text-slate-600 mb-1">Rentang Usia</label>
+                                                    <select id="age-range" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                        <option value="4-12">Anak-anak (4-12)</option>
+                                                        <option value="13-19">Remaja (13-19)</option>
+                                                        <option value="20-35">Dewasa Muda (20-35)</option>
+                                                        <option value="36-55">Dewasa (36-55)</option>
+                                                        <option value="56+">Lansia (56+)</option>
+                                                        <option value="custom">Input Sendiri...</option>
+                                                    </select>
+                                                </div>
+                                                <div id="custom-age-container" class="hidden">
+                                                    <label for="custom-age-input" class="block text-sm font-medium text-slate-600 mb-1">Masukkan Usia</label>
+                                                    <input type="text" id="custom-age-input" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: 25-30, sekitar 40 tahun">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+                                </div>
+            
+                                <!-- 3. Jumlah Gambar -->
+                                <div class="mb-6">
+                                    <label for="image-count" class="block text-lg font-semibold mb-2 text-slate-700">3. Jumlah Gambar</label>
+                                    <select id="image-count" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <option value="6">6 Gambar (Cepat)</option>
+                                        <option value="12">12 Gambar (Sedang)</option>
+                                        <option value="18">18 Gambar</option>
+                                        <option value="24">24 Gambar</option>
+                                        <option value="32" selected>32 Gambar (Maksimal)</option>
+                                    </select>
+                                    <p class="text-xs text-slate-500 mt-1">Semakin banyak gambar, semakin lama waktu pemrosesan.</p>
+                                </div>
+            
+                                <!-- Generate Button -->
+                                <div>
+                                    <button type="submit" id="generate-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all duration-200 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed">
+                                        <span id="btn-text">Hasilkan Showcase</span>
+                                        <div id="btn-spinner" class="spinner w-5 h-5 ml-3 rounded-full border-2 border-white border-t-transparent hidden"></div>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+            
+                        <!-- Right Panel: Results -->
+                        <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                            <h2 class="text-xl font-semibold mb-4 text-slate-700">Hasil Showcase Anda</h2>
+                            <div id="results-container" class="results-grid flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+                                <!-- Initial Placeholder -->
+                                <div id="results-placeholder" class="text-center text-slate-500">
+                                    <svg class="w-12 h-12 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 1.9a2.5 2.5 0 0 0 0 3.54l1.9 1.9"/><path d="m21 12-1.9-1.9a2.5 2.5 0 0 0-3.54 0l-1.9 1.9"/><path d="m3 12 1.9-1.9a2.5 2.5 0 0 1 3.54 0l1.9 1.9"/><path d="m12 21 1.9-1.9a2.5 2.5 0 0 0 0-3.54l-1.9-1.9"/></svg>
+                                    <p>Gambar yang dihasilkan akan muncul di sini.</p>
+                                </div>
+                                <!-- Loading Spinner -->
+                                <div id="results-loader" class="hidden text-center text-slate-600">
+                                     <div class="spinner w-12 h-12 mx-auto rounded-full border-4 border-slate-300"></div>
+                                     <p class="mt-4 text-lg">Menghasilkan gambar... ini mungkin memakan waktu yang sangat lama.</p>
+                                </div>
+                                <!-- Error Message -->
+                                <div id="error-message" class="hidden text-center text-red-600 bg-red-100 p-4 rounded-lg">
+                                    <p>Oops! Terjadi kesalahan. Silakan coba lagi.</p>
+                                    <p id="error-details" class="text-sm mt-1"></p>
+                                </div>
+                                <!-- Results Grid -->
+                                <div id="results-grid" class="hidden w-full grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    <!-- Generated images will be appended here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="model-generator-page" class="hidden">
+                <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+                    <!-- Header -->
+                    <header class="text-center mb-8">
+                        <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Model Image Generator</h1>
+                        <p class="mt-2 text-lg text-slate-600">Buat foto model profesional dari gambar yang ada.</p>
+                    </header>
+            
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <!-- Left Panel: Controls -->
+                        <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                            <form id="model-generation-form">
+                                <!-- 1. Upload Model -->
+                                <div class="mb-6">
+                                    <label class="block text-lg font-semibold mb-2 text-slate-700">1. Unggah Foto Model</label>
+                                    <label for="model-page-upload-input" class="file-input-label flex flex-col items-center justify-center w-full h-48 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50">
+                                        <div id="model-page-upload-prompt" class="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                                            <svg class="w-8 h-8 mb-4 text-slate-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                                            </svg>
+                                            <p class="mb-2 text-sm text-slate-500"><span class="font-semibold">Klik untuk mengunggah</span></p>
+                                            <p class="text-xs text-slate-500">PNG atau JPG</p>
+                                        </div>
+                                        <img id="model-page-image-preview" src="#" alt="Pratinjau Model" class="hidden h-full w-full object-contain rounded-lg"/>
+                                        <input id="model-page-upload-input" type="file" class="hidden" accept="image/png, image/jpeg" />
+                                    </label>
+                                </div>
+            
+                                <!-- 2. Kustomisasi -->
+                                <div class="mb-6">
+                                    <label class="block text-lg font-semibold mb-3 text-slate-700">2. Kustomisasi</label>
+                                    <fieldset id="model-guided-options" class="space-y-4">
+                                         <div>
+                                            <label for="model-photo-type" class="block text-sm font-medium text-slate-600 mb-1">Jenis Foto</label>
+                                            <select id="model-photo-type" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option value="professional studio photo, clean background, high-end studio lighting">Model Photo Studio</option>
+                                                <option value="outdoor photo, natural light, in a scenic environment like a park or city street">Model Photo Outdoor</option>
+                                                <option value="high fashion editorial style, dramatic lighting, artistic poses, magazine look">Model Photo Fashion</option>
+                                                <option value="casual lifestyle photo, relaxed setting, natural poses and expressions">Model Photo Casual</option>
+                                                <option value="formal portrait, elegant attire, sophisticated background">Model Photo Formal</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="model-page-pose" class="block text-sm font-medium text-slate-600 mb-1">Pose Model</label>
+                                            <select id="model-page-pose" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option value="standing straight">Berdiri Tegak</option>
+                                                <option value="sitting down">Duduk</option>
+                                                <option value="posing sideways">Menyamping</option>
+                                                <option value="walking">Berjalan</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="model-page-clothing" class="block text-sm font-medium text-slate-600 mb-1">Pakaian</label>
+                                            <select id="model-page-clothing" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option value="wearing modern casual clothing">Casual Modern</option>
+                                                <option value="wearing a hijab">Berhijab</option>
+                                                <option value="not wearing a hijab">Tidak Berhijab</option>
+                                                <option value="wearing a gamis (long tunic)">Gamis</option>
+                                                <option value="wearing a Baju Muslim (Muslim attire)">Baju Muslim</option>
+                                                <option value="wearing a Baju Koko (Muslim men's shirt)">Baju Koko Muslim</option>
+                                                <option value="wearing matching family outfits">Pakaian Keluarga Seragam</option>
+                                                <option value="wearing traditional Indonesian attire">Baju Adat / Tradisional</option>
+                                                <option value="wearing elegant Muslimah fashion">Busana Muslimah Elegan</option>
+                                            </select>
+                                        </div>
+                                         <div>
+                                            <label for="model-page-focus" class="block text-sm font-medium text-slate-600 mb-1">Tingkat Fokus</label>
+                                            <select id="model-page-focus" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option value="full body shot">Keseluruhan Badan</option>
+                                                <option value="medium shot, from the waist up">Setengah Badan</option>
+                                                <option value="close-up portrait shot of the face">Close-up Wajah</option>
+                                            </select>
+                                        </div>
+                                    </fieldset>
+                                </div>
+
+                                <!-- 3. Jumlah Gambar -->
+                                <div class="mb-6">
+                                    <label for="model-image-count" class="block text-lg font-semibold mb-2 text-slate-700">3. Jumlah Gambar</label>
+                                    <select id="model-image-count" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <option value="6">6 Gambar (Cepat)</option>
+                                        <option value="12">12 Gambar (Sedang)</option>
+                                        <option value="18">18 Gambar</option>
+                                        <option value="24">24 Gambar</option>
+                                        <option value="32" selected>32 Gambar (Maksimal)</option>
+                                    </select>
+                                    <p class="text-xs text-slate-500 mt-1">Semakin banyak gambar, semakin lama waktu pemrosesan.</p>
+                                </div>
+            
+                                <!-- Generate Button -->
+                                <div>
+                                    <button type="submit" id="model-page-generate-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all duration-200 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed">
+                                        Hasilkan Foto Model
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+            
+                        <!-- Right Panel: Results -->
+                        <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                             <h2 class="text-xl font-semibold mb-4 text-slate-700">Hasil Foto Model Anda</h2>
+                             <div id="model-page-status" class="mb-4 text-center p-4 min-h-[400px] flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 text-slate-500">
+                                <div>
+                                    <svg class="w-12 h-12 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                    </svg>
+                                    <p>Unggah foto untuk memulai.</p>
+                                </div>
+                             </div>
+                             <div id="model-page-output-container" class="hidden w-full grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                <!-- results here -->
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="pas-photo-generator-page" class="hidden">
+                 <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+                    <!-- Header -->
+                    <header class="text-center mb-8">
+                        <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Pas Photo Generator</h1>
+                        <p class="mt-2 text-lg text-slate-600">Buat pas foto formal untuk KTP, paspor, atau dokumen lainnya.</p>
+                    </header>
+            
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <!-- Left Panel: Controls -->
+                        <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                            <form id="pas-photo-form">
+                                <!-- 1. Upload Photo -->
+                                <div class="mb-6">
+                                    <label class="block text-lg font-semibold mb-2 text-slate-700">1. Unggah Foto Wajah</label>
+                                    <label for="pas-photo-upload-input" class="file-input-label flex flex-col items-center justify-center w-full h-48 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50">
+                                        <div id="pas-photo-upload-prompt" class="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                                            <svg class="w-8 h-8 mb-4 text-slate-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
+                                            <p class="mb-2 text-sm text-slate-500"><span class="font-semibold">Klik untuk mengunggah</span></p>
+                                            <p class="text-xs text-slate-500">Wajah terlihat jelas, hadap depan</p>
+                                        </div>
+                                        <img id="pas-photo-image-preview" src="#" alt="Pratinjau Foto" class="hidden h-full w-full object-contain rounded-lg"/>
+                                        <input id="pas-photo-upload-input" type="file" class="hidden" accept="image/png, image/jpeg" />
+                                    </label>
+                                </div>
+            
+                                <!-- 2. Kustomisasi -->
+                                <div class="mb-6 space-y-4">
+                                    <h2 class="block text-lg font-semibold text-slate-700">2. Kustomisasi</h2>
+                                     <div>
+                                        <label for="pas-photo-bg-color" class="block text-sm font-medium text-slate-600 mb-1">Warna Latar</label>
+                                        <select id="pas-photo-bg-color" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                            <option value="red">Merah</option>
+                                            <option value="blue">Biru</option>
+                                            <option value="white">Putih</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="pas-photo-attire" class="block text-sm font-medium text-slate-600 mb-1">Gaya Pakaian</label>
+                                        <select id="pas-photo-attire" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                            <option value="formal">Formal (Jas, Blazer)</option>
+                                            <option value="semi-formal">Semi Formal (Kemeja)</option>
+                                            <option value="casual">Casual</option>
+                                        </select>
+                                    </div>
+                                     <div>
+                                        <label for="pas-photo-size" class="block text-sm font-medium text-slate-600 mb-1">Ukuran Foto</label>
+                                        <select id="pas-photo-size" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                            <option value="2x3">2x3 cm</option>
+                                            <option value="3x4">3x4 cm</option>
+                                            <option value="4x6">4x6 cm</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- 3. Jumlah Gambar -->
+                                <div class="mb-6">
+                                    <label for="pas-photo-image-count" class="block text-lg font-semibold mb-2 text-slate-700">3. Jumlah Gambar</label>
+                                    <select id="pas-photo-image-count" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <option value="1" selected>1 Gambar</option>
+                                        <option value="2">2 Gambar</option>
+                                        <option value="4">4 Gambar</option>
+                                    </select>
+                                </div>
+            
+                                <!-- Generate Button -->
+                                <div>
+                                    <button type="submit" id="pas-photo-generate-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all duration-200 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed">
+                                        Buat Pas Photo
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+            
+                        <!-- Right Panel: Results -->
+                        <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                            <h2 class="text-xl font-semibold mb-4 text-slate-700">Hasil Pas Photo Anda</h2>
+                            <div id="pas-photo-results-container" class="results-grid flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+                                <!-- Initial Placeholder -->
+                                <div id="pas-photo-results-placeholder" class="text-center text-slate-500">
+                                     <svg class="w-12 h-12 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5a15.75 15.75 0 0 1 15 0" /></svg>
+                                    <p>Hasil pas foto akan muncul di sini.</p>
+                                </div>
+                                <!-- Loading Spinner -->
+                                <div id="pas-photo-results-loader" class="hidden text-center text-slate-600">
+                                     <div class="spinner w-12 h-12 mx-auto rounded-full border-4 border-slate-300"></div>
+                                     <p class="mt-4 text-lg">Memproses foto...</p>
+                                </div>
+                                <!-- Error Message -->
+                                <div id="pas-photo-error-message" class="hidden text-center text-red-600 bg-red-100 p-4 rounded-lg">
+                                    <p>Oops! Terjadi kesalahan.</p>
+                                    <p id="pas-photo-error-details" class="text-sm mt-1"></p>
+                                </div>
+                                <!-- Results Grid -->
+                                <div id="pas-photo-results-grid" class="hidden w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <!-- Generated images will be appended here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Image Preview Modal -->
+    <div id="image-preview-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl max-h-full overflow-auto">
+            <div class="p-2 text-right">
+                <button id="close-modal-btn" class="text-slate-500 hover:text-slate-800">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <img id="modal-image" src="" alt="Pratinjau Gambar" class="w-full h-auto p-4 pt-0">
+        </div>
+    </div>
+
+    <script type="module" src="./index.tsx"></script>
+</body>
+</html>
