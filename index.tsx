@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality } from "@google/genai";
 
 if (!process.env.API_KEY) {
@@ -20,44 +19,51 @@ mobileMenuButton.addEventListener('click', () => {
 const navProductBtn = document.getElementById('nav-product-btn') as HTMLAnchorElement;
 const navModelBtn = document.getElementById('nav-model-btn') as HTMLAnchorElement;
 const navPasPhotoBtn = document.getElementById('nav-pas-photo-btn') as HTMLAnchorElement;
+const navTravelBtn = document.getElementById('nav-travel-btn') as HTMLAnchorElement;
 const productPage = document.getElementById('product-generator-page') as HTMLElement;
 const modelPage = document.getElementById('model-generator-page') as HTMLElement;
 const pasPhotoPage = document.getElementById('pas-photo-generator-page') as HTMLElement;
+const travelPage = document.getElementById('travel-generator-page') as HTMLElement;
+
+function setActiveNav(activeBtn: HTMLAnchorElement) {
+    const allBtns = [navProductBtn, navModelBtn, navPasPhotoBtn, navTravelBtn];
+    allBtns.forEach(btn => {
+        btn.classList.remove('bg-indigo-600', 'text-white');
+        btn.classList.add('hover:bg-slate-800');
+    });
+    activeBtn.classList.add('bg-indigo-600', 'text-white');
+    activeBtn.classList.remove('hover:bg-slate-800');
+}
+
+function showPage(pageToShow: HTMLElement) {
+    const allPages = [productPage, modelPage, pasPhotoPage, travelPage];
+    allPages.forEach(page => page.classList.add('hidden'));
+    pageToShow.classList.remove('hidden');
+}
+
 
 navProductBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    productPage.classList.remove('hidden');
-    modelPage.classList.add('hidden');
-    pasPhotoPage.classList.add('hidden');
-    navProductBtn.classList.add('bg-indigo-600', 'text-white');
-    navModelBtn.classList.remove('bg-indigo-600', 'text-white');
-    navModelBtn.classList.add('hover:bg-slate-800');
-    navPasPhotoBtn.classList.remove('bg-indigo-600', 'text-white');
-    navPasPhotoBtn.classList.add('hover:bg-slate-800');
+    showPage(productPage);
+    setActiveNav(navProductBtn);
 });
 
 navModelBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    productPage.classList.add('hidden');
-    modelPage.classList.remove('hidden');
-    pasPhotoPage.classList.add('hidden');
-    navModelBtn.classList.add('bg-indigo-600', 'text-white');
-    navProductBtn.classList.remove('bg-indigo-600', 'text-white');
-    navProductBtn.classList.add('hover:bg-slate-800');
-    navPasPhotoBtn.classList.remove('bg-indigo-600', 'text-white');
-    navPasPhotoBtn.classList.add('hover:bg-slate-800');
+    showPage(modelPage);
+    setActiveNav(navModelBtn);
 });
 
 navPasPhotoBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    productPage.classList.add('hidden');
-    modelPage.classList.add('hidden');
-    pasPhotoPage.classList.remove('hidden');
-    navPasPhotoBtn.classList.add('bg-indigo-600', 'text-white');
-    navProductBtn.classList.remove('bg-indigo-600', 'text-white');
-    navProductBtn.classList.add('hover:bg-slate-800');
-    navModelBtn.classList.remove('bg-indigo-600', 'text-white');
-    navModelBtn.classList.add('hover:bg-slate-800');
+    showPage(pasPhotoPage);
+    setActiveNav(navPasPhotoBtn);
+});
+
+navTravelBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    showPage(travelPage);
+    setActiveNav(navTravelBtn);
 });
 
 
@@ -754,6 +760,198 @@ if (pasPhotoForm) {
             const downloadLink = document.createElement('a');
             downloadLink.href = imageUrl;
             downloadLink.download = `pas_photo_${Date.now()}.png`;
+            downloadLink.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
+            downloadLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>`;
+            
+            buttonContainer.appendChild(previewBtn);
+            buttonContainer.appendChild(downloadLink);
+            
+            container.appendChild(img);
+            container.appendChild(buttonContainer);
+            resultsGrid.appendChild(container);
+        });
+        resultsGrid.classList.remove('hidden');
+    }
+}
+
+// --- TRAVEL PHOTO GENERATOR SCRIPT ---
+const travelForm = document.getElementById('travel-photo-form') as HTMLFormElement;
+if (travelForm) {
+    const generateBtn = document.getElementById('travel-generate-btn') as HTMLButtonElement;
+    const resultsPlaceholder = document.getElementById('travel-results-placeholder') as HTMLElement;
+    const resultsLoader = document.getElementById('travel-results-loader') as HTMLElement;
+    const resultsGrid = document.getElementById('travel-results-grid') as HTMLElement;
+    const errorMessage = document.getElementById('travel-error-message') as HTMLElement;
+    const errorDetails = document.getElementById('travel-error-details') as HTMLElement;
+    
+    let travelFile1: { base64: string, mimeType: string } | null = null;
+    let travelFile2: { base64: string, mimeType: string } | null = null;
+
+    const deleteBtn1 = document.getElementById('travel-delete-btn-1') as HTMLButtonElement;
+    const deleteBtn2 = document.getElementById('travel-delete-btn-2') as HTMLButtonElement;
+
+    const resetUploader = (
+        fileVarSetter: (val: null) => void,
+        fileInputId: string,
+        previewId: string,
+        promptId: string,
+        deleteBtn: HTMLButtonElement
+    ) => {
+        fileVarSetter(null);
+        (document.getElementById(fileInputId) as HTMLInputElement).value = '';
+        const preview = document.getElementById(previewId) as HTMLImageElement;
+        preview.src = '#';
+        preview.classList.add('hidden');
+        document.getElementById(promptId)?.classList.remove('hidden');
+        deleteBtn.classList.add('hidden');
+    };
+    
+    deleteBtn1.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resetUploader(
+            (val) => { travelFile1 = val; },
+            'travel-upload-input-1',
+            'travel-image-preview-1',
+            'travel-upload-prompt-1',
+            deleteBtn1
+        );
+    });
+
+    deleteBtn2.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resetUploader(
+            (val) => { travelFile2 = val; },
+            'travel-upload-input-2',
+            'travel-image-preview-2',
+            'travel-upload-prompt-2',
+            deleteBtn2
+        );
+    });
+
+    setupFileUploader('travel-upload-input-1', 'travel-image-preview-1', 'travel-upload-prompt-1', (base64, fileType) => {
+        travelFile1 = { base64, mimeType: fileType };
+        deleteBtn1.classList.remove('hidden');
+    });
+
+    setupFileUploader('travel-upload-input-2', 'travel-image-preview-2', 'travel-upload-prompt-2', (base64, fileType) => {
+        travelFile2 = { base64, mimeType: fileType };
+        deleteBtn2.classList.remove('hidden');
+    });
+
+    travelForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!travelFile1) {
+            showModal('Harap unggah setidaknya foto pertama.');
+            return;
+        }
+        
+        setTravelLoadingState(true);
+
+        const bgValue = (document.getElementById('travel-bg-select') as HTMLSelectElement).value;
+        const imageCount = parseInt((document.getElementById('travel-image-count') as HTMLSelectElement).value, 10);
+        
+        const backgroundMap: { [key: string]: string } = {
+            'eiffel': 'the Eiffel Tower in Paris, France',
+            'fuji': 'Mount Fuji in Japan',
+            'sakura': 'a beautiful scene of cherry blossoms in Japan',
+            'windmill': 'classic Dutch windmills in the Netherlands',
+            'pisa': 'the Leaning Tower of Pisa in Italy',
+            'liberty': 'the Statue of Liberty in New York, USA',
+            'kremlin': 'the Kremlin in Moscow, Russia',
+        };
+        const bgDescription = backgroundMap[bgValue];
+        
+        const clothingMap: { [key: string]: string } = {
+            'eiffel': 'stylish and chic European city wear, like a trench coat or a fashionable jacket',
+            'fuji': 'appropriate outdoor or hiking gear suitable for a cool mountain climate',
+            'sakura': 'light spring clothing, like a light jacket or sweater, suitable for a pleasant day in Japan',
+            'windmill': 'comfortable and casual European travel wear, perhaps with a light jacket for a breezy day',
+            'pisa': 'summer tourist attire, like a light shirt or dress, suitable for a sunny day in Italy',
+            'liberty': 'casual American tourist style, like jeans and a t-shirt or a light jacket',
+            'kremlin': 'warm and stylish clothing suitable for Moscow, such as a smart coat or jacket',
+        };
+        const clothingDescription = clothingMap[bgValue];
+
+        const personDescription = travelFile2
+            ? "the two people from the provided images, placing them together naturally (e.g., as friends or a couple)"
+            : "the person from the provided image";
+
+        const prompt = `Create a realistic travel photograph. Take ${personDescription} and place them in a new scene.
+1. **Background:** The new background must be a beautiful, clear shot of ${bgDescription}.
+2. **Attire:** IMPORTANT: Change the person's (or people's) clothing to be appropriate for the location. Dress them in ${clothingDescription}.
+3. **Integration:** The people must be integrated seamlessly into the new environment. It is crucial to match the environmental lighting, shadows, and perspective perfectly to make it look authentic.
+4. **HIGHEST PRIORITY (Preservation):** The faces, hair, and distinct facial features from the original images must be preserved with 100% accuracy. DO NOT alter their facial appearance.`;
+
+        const parts: any[] = [{ text: prompt }];
+        if (travelFile1) {
+            parts.push({ inlineData: { mimeType: travelFile1.mimeType, data: travelFile1.base64 } });
+        }
+        if (travelFile2) {
+            parts.push({ inlineData: { mimeType: travelFile2.mimeType, data: travelFile2.base64 } });
+        }
+        
+        const promises: Promise<string | undefined>[] = [];
+        for (let i = 0; i < imageCount; i++) {
+            promises.push(generateImage(parts));
+        }
+
+        try {
+            const results = await Promise.all(promises);
+            displayTravelResults(results.filter(r => r) as string[]);
+        } catch (error: any) {
+            console.error("Error generating travel photo:", error);
+            showTravelErrorState(error.message);
+        } finally {
+            setTravelLoadingState(false);
+        }
+    });
+
+    function setTravelLoadingState(isLoading: boolean) {
+        generateBtn.disabled = isLoading;
+        resultsLoader.classList.toggle('hidden', !isLoading);
+
+        if (isLoading) {
+            resultsPlaceholder.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            resultsGrid.classList.add('hidden');
+            resultsGrid.innerHTML = '';
+        }
+    }
+    
+    function showTravelErrorState(message: string) {
+        resultsPlaceholder.classList.add('hidden');
+        resultsLoader.classList.add('hidden');
+        resultsGrid.classList.add('hidden');
+        errorMessage.classList.remove('hidden');
+        errorDetails.textContent = message;
+    }
+    
+    function displayTravelResults(images: string[]) {
+        setTravelLoadingState(false);
+        resultsGrid.innerHTML = '';
+        images.forEach(imageUrl => {
+            const container = document.createElement('div');
+            container.className = 'relative group bg-slate-100 rounded-lg flex items-center justify-center aspect-[4/5]';
+
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = "Generated Travel Photo";
+            img.className = "w-full h-full object-cover rounded-lg animate-fade-in";
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'absolute top-2 right-2 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity';
+
+            const previewBtn = document.createElement('button');
+            previewBtn.type = 'button';
+            previewBtn.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
+            previewBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>`;
+            previewBtn.onclick = () => showImagePreview(imageUrl);
+
+            const downloadLink = document.createElement('a');
+            downloadLink.href = imageUrl;
+            downloadLink.download = `travel_photo_${Date.now()}.png`;
             downloadLink.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
             downloadLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>`;
             

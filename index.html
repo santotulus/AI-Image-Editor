@@ -96,6 +96,12 @@
                     </svg>
                     <span>Pas Photo</span>
                 </a>
+                <a href="#" id="nav-travel-btn" class="flex items-center space-x-3 py-2.5 px-4 rounded transition duration-200 hover:bg-slate-800">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12.75 3.03v.568c0 .334.148.65.405.864l1.068.89c.442.369.535 1.01.216 1.49l-.51.766a2.25 2.25 0 0 1-1.161.886l-.143.048a1.107 1.107 0 0 0-.57 1.664c.369.555.169 1.307-.427 1.605L9 13.125l.423 1.059a.956.956 0 0 1-1.652.928l-.679-.906a1.125 1.125 0 0 0-1.906.172L4.5 15.75l-.612.153M12.75 3.031a9 9 0 0 0-8.862 1.516l-.612.153a2.25 2.25 0 0 0-1.531 2.118l-.197 1.027a2.25 2.25 0 0 0 1.531 2.618l.5-2.548c.197-.995.996-1.762 2.006-1.762h4.482c.995 0 1.805.75 1.996 1.748l.5 2.548a2.25 2.25 0 0 0 1.531-2.618l-.197-1.027a2.25 2.25 0 0 0-1.531-2.118l-.612-.153A9 9 0 0 0 12.75 3.03Z" />
+                    </svg>
+                    <span>Photo Travel</span>
+                </a>
             </nav>
         </aside>
 
@@ -588,6 +594,123 @@
                     </div>
                 </div>
             </div>
+            <div id="travel-generator-page" class="hidden">
+                <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+                   <!-- Header -->
+                   <header class="text-center mb-8">
+                       <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Photo Traveling Generator</h1>
+                       <p class="mt-2 text-lg text-slate-600">Buat foto seolah-olah Anda sedang traveling di seluruh dunia.</p>
+                   </header>
+           
+                   <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                       <!-- Left Panel: Controls -->
+                       <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                           <form id="travel-photo-form">
+                               <!-- 1. Upload Photo -->
+                               <div class="mb-6">
+                                   <label class="block text-lg font-semibold mb-2 text-slate-700">1. Unggah Foto Anda</label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <!-- Uploader 1 -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-600 mb-1 text-center">Foto 1</label>
+                                            <label for="travel-upload-input-1" class="relative file-input-label flex flex-col items-center justify-center w-full h-48 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50">
+                                                <button type="button" id="travel-delete-btn-1" class="hidden absolute top-2 right-2 z-10 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                                <div id="travel-upload-prompt-1" class="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                                                    <svg class="w-8 h-8 mb-4 text-slate-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
+                                                    <p class="mb-2 text-sm text-slate-500"><span class="font-semibold">Unggah foto pertama</span></p>
+                                                </div>
+                                                <img id="travel-image-preview-1" src="#" alt="Pratinjau Foto 1" class="hidden h-full w-full object-contain rounded-lg"/>
+                                                <input id="travel-upload-input-1" type="file" class="hidden" accept="image/png, image/jpeg" />
+                                            </label>
+                                        </div>
+                                        <!-- Uploader 2 -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-600 mb-1 text-center">Foto 2 (Opsional)</label>
+                                            <label for="travel-upload-input-2" class="relative file-input-label flex flex-col items-center justify-center w-full h-48 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50">
+                                                <button type="button" id="travel-delete-btn-2" class="hidden absolute top-2 right-2 z-10 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                                <div id="travel-upload-prompt-2" class="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                                                    <svg class="w-8 h-8 mb-4 text-slate-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
+                                                    <p class="mb-2 text-sm text-slate-500"><span class="font-semibold">Unggah foto kedua</span></p>
+                                                </div>
+                                                <img id="travel-image-preview-2" src="#" alt="Pratinjau Foto 2" class="hidden h-full w-full object-contain rounded-lg"/>
+                                                <input id="travel-upload-input-2" type="file" class="hidden" accept="image/png, image/jpeg" />
+                                            </label>
+                                        </div>
+                                    </div>
+                               </div>
+           
+                               <!-- 2. Kustomisasi -->
+                               <div class="mb-6 space-y-4">
+                                   <h2 class="block text-lg font-semibold text-slate-700">2. Kustomisasi</h2>
+                                    <div>
+                                       <label for="travel-bg-select" class="block text-sm font-medium text-slate-600 mb-1">Pilih Latar Ikon Dunia</label>
+                                       <select id="travel-bg-select" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                           <option value="eiffel">Menara Eifel, Prancis</option>
+                                           <option value="fuji">Gunung Fuji, Jepang</option>
+                                           <option value="sakura">Bunga Sakura, Jepang</option>
+                                           <option value="windmill">Kincir Angin, Belanda</option>
+                                           <option value="pisa">Menara Pisa, Italia</option>
+                                           <option value="liberty">Patung Liberty, Amerika</option>
+                                           <option value="kremlin">Kremlin, Rusia</option>
+                                       </select>
+                                   </div>
+                               </div>
+
+                               <!-- 3. Jumlah Gambar -->
+                               <div class="mb-6">
+                                   <label for="travel-image-count" class="block text-lg font-semibold mb-2 text-slate-700">3. Jumlah Gambar</label>
+                                   <select id="travel-image-count" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                       <option value="1" selected>1 Gambar</option>
+                                       <option value="2">2 Gambar</option>
+                                       <option value="4">4 Gambar</option>
+                                   </select>
+                               </div>
+           
+                               <!-- Generate Button -->
+                               <div>
+                                   <button type="submit" id="travel-generate-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all duration-200 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed">
+                                       Buat Foto Travel
+                                   </button>
+                               </div>
+                           </form>
+                       </div>
+           
+                       <!-- Right Panel: Results -->
+                       <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                           <h2 class="text-xl font-semibold mb-4 text-slate-700">Hasil Foto Travel Anda</h2>
+                           <div id="travel-results-container" class="results-grid flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+                               <!-- Initial Placeholder -->
+                               <div id="travel-results-placeholder" class="text-center text-slate-500">
+                                    <svg class="w-12 h-12 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12.75 3.03v.568c0 .334.148.65.405.864l1.068.89c.442.369.535 1.01.216 1.49l-.51.766a2.25 2.25 0 0 1-1.161.886l-.143.048a1.107 1.107 0 0 0-.57 1.664c.369.555.169 1.307-.427 1.605L9 13.125l.423 1.059a.956.956 0 0 1-1.652.928l-.679-.906a1.125 1.125 0 0 0-1.906.172L4.5 15.75l-.612.153M12.75 3.031a9 9 0 0 0-8.862 1.516l-.612.153a2.25 2.25 0 0 0-1.531 2.118l-.197 1.027a2.25 2.25 0 0 0 1.531 2.618l.5-2.548c.197-.995.996-1.762 2.006-1.762h4.482c.995 0 1.805.75 1.996 1.748l.5 2.548a2.25 2.25 0 0 0 1.531-2.618l-.197-1.027a2.25 2.25 0 0 0-1.531-2.118l-.612-.153A9 9 0 0 0 12.75 3.03Z" /></svg>
+                                   <p>Hasil foto travel Anda akan muncul di sini.</p>
+                               </div>
+                               <!-- Loading Spinner -->
+                               <div id="travel-results-loader" class="hidden text-center text-slate-600">
+                                    <div class="spinner w-12 h-12 mx-auto rounded-full border-4 border-slate-300"></div>
+                                    <p class="mt-4 text-lg">Memproses foto...</p>
+                               </div>
+                               <!-- Error Message -->
+                               <div id="travel-error-message" class="hidden text-center text-red-600 bg-red-100 p-4 rounded-lg">
+                                   <p>Oops! Terjadi kesalahan.</p>
+                                   <p id="travel-error-details" class="text-sm mt-1"></p>
+                               </div>
+                               <!-- Results Grid -->
+                               <div id="travel-results-grid" class="hidden w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                   <!-- Generated images will be appended here -->
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+           </div>
         </div>
     </div>
     
