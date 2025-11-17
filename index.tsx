@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Modality } from "@google/genai";
 
 // --- Sidebar Toggle Script ---
@@ -16,13 +17,18 @@ const navProductBtn = document.getElementById('nav-product-btn') as HTMLAnchorEl
 const navModelBtn = document.getElementById('nav-model-btn') as HTMLAnchorElement;
 const navPasPhotoBtn = document.getElementById('nav-pas-photo-btn') as HTMLAnchorElement;
 const navTravelBtn = document.getElementById('nav-travel-btn') as HTMLAnchorElement;
+const navPreweddingBtn = document.getElementById('nav-prewedding-btn') as HTMLAnchorElement;
+const navRestorationBtn = document.getElementById('nav-restoration-btn') as HTMLAnchorElement;
 const productPage = document.getElementById('product-generator-page') as HTMLElement;
 const modelPage = document.getElementById('model-generator-page') as HTMLElement;
 const pasPhotoPage = document.getElementById('pas-photo-generator-page') as HTMLElement;
 const travelPage = document.getElementById('travel-generator-page') as HTMLElement;
+const preweddingPage = document.getElementById('prewedding-generator-page') as HTMLElement;
+const digitalRestorationPage = document.getElementById('digital-restoration-page') as HTMLElement;
+
 
 function setActiveNav(activeBtn: HTMLAnchorElement) {
-    const allBtns = [navProductBtn, navModelBtn, navPasPhotoBtn, navTravelBtn];
+    const allBtns = [navProductBtn, navModelBtn, navPasPhotoBtn, navTravelBtn, navPreweddingBtn, navRestorationBtn];
     allBtns.forEach(btn => {
         if(btn) {
             btn.classList.remove('bg-indigo-600', 'text-white');
@@ -36,7 +42,7 @@ function setActiveNav(activeBtn: HTMLAnchorElement) {
 }
 
 function showPage(pageToShow: HTMLElement) {
-    const allPages = [productPage, modelPage, pasPhotoPage, travelPage];
+    const allPages = [productPage, modelPage, pasPhotoPage, travelPage, preweddingPage, digitalRestorationPage];
     allPages.forEach(page => {
         if(page) page.classList.add('hidden');
     });
@@ -73,6 +79,22 @@ if (navTravelBtn) {
         e.preventDefault();
         showPage(travelPage);
         setActiveNav(navTravelBtn);
+    });
+}
+
+if (navPreweddingBtn) {
+    navPreweddingBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage(preweddingPage);
+        setActiveNav(navPreweddingBtn);
+    });
+}
+
+if (navRestorationBtn) {
+    navRestorationBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage(digitalRestorationPage);
+        setActiveNav(navRestorationBtn);
     });
 }
 
@@ -1064,6 +1086,385 @@ if (travelForm) {
             const downloadLink = document.createElement('a');
             downloadLink.href = imageUrl;
             downloadLink.download = `travel_photo_${Date.now()}.png`;
+            downloadLink.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
+            downloadLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>`;
+            
+            buttonContainer.appendChild(previewBtn);
+            buttonContainer.appendChild(downloadLink);
+            
+            container.appendChild(img);
+            container.appendChild(buttonContainer);
+            resultsGrid.appendChild(container);
+        });
+        resultsGrid.classList.remove('hidden');
+    }
+}
+
+
+// --- PREWEDDING PHOTO GENERATOR SCRIPT ---
+const preweddingForm = document.getElementById('prewedding-photo-form') as HTMLFormElement;
+if (preweddingForm) {
+    const generateBtn = document.getElementById('prewedding-generate-btn') as HTMLButtonElement;
+    const resultsPlaceholder = document.getElementById('prewedding-results-placeholder') as HTMLElement;
+    const resultsLoader = document.getElementById('prewedding-results-loader') as HTMLElement;
+    const resultsGrid = document.getElementById('prewedding-results-grid') as HTMLElement;
+    const errorMessage = document.getElementById('prewedding-error-message') as HTMLElement;
+    const errorDetails = document.getElementById('prewedding-error-details') as HTMLElement;
+    const resultsLoaderText = resultsLoader ? resultsLoader.querySelector('p') : null;
+    
+    const locationTypeOutdoorRadio = document.getElementById('prewedding-location-type-outdoor') as HTMLInputElement;
+    const locationTypeIndoorRadio = document.getElementById('prewedding-location-type-indoor') as HTMLInputElement;
+    const locationOutdoorContainer = document.getElementById('prewedding-location-outdoor-container') as HTMLElement;
+    const locationIndoorContainer = document.getElementById('prewedding-location-indoor-container') as HTMLElement;
+
+    let preweddingFileA: { base64: string, mimeType: string } | null = null;
+    let preweddingFileB: { base64: string, mimeType: string } | null = null;
+
+    const deleteBtnA = document.getElementById('prewedding-delete-btn-a') as HTMLButtonElement;
+    const deleteBtnB = document.getElementById('prewedding-delete-btn-b') as HTMLButtonElement;
+
+    function updatePreweddingLocationView() {
+        if (!locationOutdoorContainer || !locationIndoorContainer || !locationTypeOutdoorRadio) return;
+        const isOutdoor = locationTypeOutdoorRadio.checked;
+        locationOutdoorContainer.classList.toggle('hidden', !isOutdoor);
+        locationIndoorContainer.classList.toggle('hidden', isOutdoor);
+    }
+
+    if (locationTypeOutdoorRadio && locationTypeIndoorRadio) {
+        locationTypeOutdoorRadio.addEventListener('change', updatePreweddingLocationView);
+        locationTypeIndoorRadio.addEventListener('change', updatePreweddingLocationView);
+    }
+
+    const resetUploader = (
+        fileVarSetter: (val: null) => void,
+        fileInputId: string,
+        previewId: string,
+        promptId: string,
+        deleteBtn: HTMLButtonElement
+    ) => {
+        fileVarSetter(null);
+        (document.getElementById(fileInputId) as HTMLInputElement).value = '';
+        const preview = document.getElementById(previewId) as HTMLImageElement;
+        preview.src = '#';
+        preview.classList.add('hidden');
+        document.getElementById(promptId)?.classList.remove('hidden');
+        deleteBtn.classList.add('hidden');
+    };
+    
+    if(deleteBtnA) {
+        deleteBtnA.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            resetUploader(
+                (val) => { preweddingFileA = val; },
+                'prewedding-upload-input-a',
+                'prewedding-image-preview-a',
+                'prewedding-upload-prompt-a',
+                deleteBtnA
+            );
+        });
+    }
+
+    if(deleteBtnB) {
+        deleteBtnB.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            resetUploader(
+                (val) => { preweddingFileB = val; },
+                'prewedding-upload-input-b',
+                'prewedding-image-preview-b',
+                'prewedding-upload-prompt-b',
+                deleteBtnB
+            );
+        });
+    }
+
+    setupFileUploader('prewedding-upload-input-a', 'prewedding-image-preview-a', 'prewedding-upload-prompt-a', (base64, fileType) => {
+        preweddingFileA = { base64, mimeType: fileType };
+        if(deleteBtnA) deleteBtnA.classList.remove('hidden');
+    });
+
+    setupFileUploader('prewedding-upload-input-b', 'prewedding-image-preview-b', 'prewedding-upload-prompt-b', (base64, fileType) => {
+        preweddingFileB = { base64, mimeType: fileType };
+        if(deleteBtnB) deleteBtnB.classList.remove('hidden');
+    });
+
+    preweddingForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!preweddingFileA || !preweddingFileB) {
+            showModal('Harap unggah foto untuk kedua pasangan.');
+            return;
+        }
+        
+        setPreweddingLoadingState(true);
+
+        const locationType = (document.querySelector('input[name="location-type"]:checked') as HTMLInputElement).value;
+        let locationValue = '';
+        if (locationType === 'outdoor') {
+            locationValue = (document.getElementById('prewedding-location-outdoor-select') as HTMLSelectElement).value;
+        } else {
+            locationValue = (document.getElementById('prewedding-location-indoor-select') as HTMLSelectElement).value;
+        }
+
+        const attireValue = (document.getElementById('prewedding-attire-select') as HTMLSelectElement).value;
+        const imageCount = parseInt((document.getElementById('prewedding-image-count') as HTMLSelectElement).value, 10);
+        
+        const locationMap: { [key: string]: string } = {
+            'pantai': 'a beautiful, serene beach during the golden hour of sunset',
+            'padang_rumput': 'a beautiful meadow or flower field with tall grass and wildflowers',
+            'hutan': 'a lush, enchanting forest with dappled sunlight filtering through the trees',
+            'kota': 'a bustling and modern cityscape at night with beautiful bokeh lights in the background',
+            'pasar': 'a vibrant and colorful traditional market, full of life and culture',
+            'pegunungan': 'a majestic mountain landscape with a breathtaking panoramic view',
+            'masjid': 'the serene and grand interior of a beautiful mosque with intricate architectural details',
+            'gereja': 'the classic and solemn interior of a beautiful church with stained glass windows',
+            'studio': 'a minimalist studio with a clean, simple background and professional lighting',
+            'rumah_kaca': 'a bright and airy botanical greenhouse filled with exotic plants and flowers',
+            'gedung_tua': 'a historic old building with rustic, vintage architecture and charm',
+            'cafe': 'a cozy and stylish cafe with a warm, intimate ambiance'
+        };
+        const locationDescription = locationMap[locationValue];
+        
+        const attireMap: { [key: string]: string } = {
+            'formal': 'a stunning formal wedding gown for her and a sharp, classic tuxedo for him',
+            'modern': 'chic and modern prewedding outfits, like a stylish contemporary dress and a smart suit',
+            'muslim': 'elegant and modest Muslim wedding attire, like a beautiful gamis or kaftan for her and a neat koko shirt or thobe for him',
+            'kasual': 'stylish and comfortable casual outfits that complement each other',
+            'batik': 'elegant and matching modern Batik couple outfits',
+            'adat': 'beautiful and intricate traditional Indonesian wedding attire',
+            'vintage': 'classy vintage-style clothing, reminiscent of the 1950s or 60s',
+        };
+
+        const autoAttireMap: { [key: string]: string } = {
+            'pantai': 'light and airy beachwear, like a flowing white sundress for her and a linen shirt for him',
+            'padang_rumput': 'bohemian chic outfits, like a flowing dress and a relaxed shirt, perfect for a field of flowers',
+            'hutan': 'bohemian or rustic chic outfits that blend with the natural surroundings',
+            'kota': 'fashionable and trendy city outfits, perfect for a night out',
+            'pasar': 'casual, comfortable, yet stylish outfits suitable for walking around a market',
+            'pegunungan': 'stylish but practical layered outfits or hiking gear suitable for the mountains',
+            'masjid': 'modest and elegant Muslim attire (gamis and koko) that is respectful for a place of worship',
+            'gereja': 'smart and respectful semi-formal attire suitable for a church setting',
+            'studio': 'simple, elegant, and timeless outfits that don\'t distract from the couple',
+            'rumah_kaca': 'light, floral, or pastel-colored outfits that complement the botanical setting',
+            'gedung_tua': 'vintage or classic-styled clothing that matches the historic feel of the building',
+            'cafe': 'smart-casual and cozy outfits, like sweaters and nice trousers'
+        };
+        
+        const clothingDescription = attireValue === 'otomatis'
+            ? autoAttireMap[locationValue]
+            : attireMap[attireValue];
+
+        const prompt = `Create a photorealistic, professional prewedding photograph featuring the two people from the provided images, placed together naturally and romantically as a couple.
+1. **Background:** The setting is ${locationDescription}.
+2. **Attire:** Dress the couple in ${clothingDescription}.
+3. **Integration & Style:** The couple must be integrated seamlessly into the scene. Use professional photography parameters: *Cinematic lighting, shallow depth of field (bokeh), alternate between 14mm, 35mm, and 85mm lens effects for different shots, 8k resolution, highly detailed texture, and a romantic mood*.
+4. **Pose & Mood:** The pose should be romantic, respectful, and appropriate.
+5. **HIGHEST PRIORITY (Preservation):** The faces, hair, skin tone, and distinct facial features of both individuals from the original images must be preserved with 100% accuracy. Do not alter their facial appearance. The goal is maximum likeness.
+Do not generate any NSFW, violent, or inappropriate content.`;
+
+        const parts: any[] = [
+            { text: prompt },
+            { inlineData: { mimeType: preweddingFileA!.mimeType, data: preweddingFileA!.base64 } },
+            { inlineData: { mimeType: preweddingFileB!.mimeType, data: preweddingFileB!.base64 } }
+        ];
+        
+        const generatedImages: string[] = [];
+        try {
+            for (let i = 0; i < imageCount; i++) {
+                if(resultsLoaderText) resultsLoaderText.textContent = `Memproses foto...`;
+                const result = await generateImage(parts);
+                if (result) {
+                    generatedImages.push(result);
+                }
+            }
+            displayPreweddingResults(generatedImages);
+        } catch (error: any) {
+            console.error("Error generating prewedding photo:", error);
+            showPreweddingErrorState(error.message);
+            if (generatedImages.length > 0) {
+                 displayPreweddingResults(generatedImages);
+            }
+        } finally {
+            setPreweddingLoadingState(false);
+            if(resultsLoaderText) resultsLoaderText.textContent = `Memproses foto...`;
+        }
+    });
+
+    function setPreweddingLoadingState(isLoading: boolean) {
+        if (!generateBtn || !resultsLoader || !resultsPlaceholder || !errorMessage || !resultsGrid) return;
+
+        generateBtn.disabled = isLoading;
+        resultsLoader.classList.toggle('hidden', !isLoading);
+
+        if (isLoading) {
+            resultsPlaceholder.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            resultsGrid.classList.add('hidden');
+            resultsGrid.innerHTML = '';
+        }
+    }
+    
+    function showPreweddingErrorState(message: string) {
+        if (!resultsPlaceholder || !resultsLoader || !resultsGrid || !errorMessage || !errorDetails) return;
+
+        resultsPlaceholder.classList.add('hidden');
+        resultsLoader.classList.add('hidden');
+        if (resultsGrid.children.length === 0) {
+            resultsGrid.classList.add('hidden');
+        }
+        errorMessage.classList.remove('hidden');
+        errorDetails.textContent = message;
+    }
+    
+    function displayPreweddingResults(images: string[]) {
+        if (!resultsGrid) return;
+
+        setPreweddingLoadingState(false);
+        resultsGrid.innerHTML = '';
+        images.forEach(imageUrl => {
+            const container = document.createElement('div');
+            container.className = 'relative group bg-slate-100 rounded-lg flex items-center justify-center aspect-[4/5]';
+
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = "Generated Prewedding Photo";
+            img.className = "w-full h-full object-cover rounded-lg animate-fade-in";
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'absolute top-2 right-2 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity';
+
+            const previewBtn = document.createElement('button');
+            previewBtn.type = 'button';
+            previewBtn.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
+            previewBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>`;
+            previewBtn.onclick = () => showImagePreview(imageUrl);
+
+            const downloadLink = document.createElement('a');
+            downloadLink.href = imageUrl;
+            downloadLink.download = `prewedding_photo_${Date.now()}.png`;
+            downloadLink.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
+            downloadLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>`;
+            
+            buttonContainer.appendChild(previewBtn);
+            buttonContainer.appendChild(downloadLink);
+            
+            container.appendChild(img);
+            container.appendChild(buttonContainer);
+            resultsGrid.appendChild(container);
+        });
+        resultsGrid.classList.remove('hidden');
+    }
+
+    updatePreweddingLocationView();
+}
+
+// --- DIGITAL PHOTO RESTORATION SCRIPT ---
+const restorationForm = document.getElementById('digital-restoration-form') as HTMLFormElement;
+if (restorationForm) {
+    const generateBtn = document.getElementById('restoration-generate-btn') as HTMLButtonElement;
+    const resultsPlaceholder = document.getElementById('restoration-results-placeholder') as HTMLElement;
+    const resultsLoader = document.getElementById('restoration-results-loader') as HTMLElement;
+    const resultsGrid = document.getElementById('restoration-results-grid') as HTMLElement;
+    const errorMessage = document.getElementById('restoration-error-message') as HTMLElement;
+    const errorDetails = document.getElementById('restoration-error-details') as HTMLElement;
+    
+    let restorationFile: { base64: string, mimeType: string } | null = null;
+
+    setupFileUploader('restoration-upload-input', 'restoration-image-preview', 'restoration-upload-prompt', (base64, fileType) => {
+        restorationFile = { base64, mimeType: fileType };
+    });
+
+    restorationForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!restorationFile) {
+            showModal('Harap unggah foto yang ingin Anda pulihkan.');
+            return;
+        }
+        
+        setRestorationLoadingState(true);
+        
+        const prompt = `Perform a comprehensive photo restoration on the provided image. Your goal is to restore and enhance the photo with the following specifications:
+1.  **Damage Repair:** Realistically fix any physical damage, including tears, cracks, scratches, water stains, and mold. If parts of the subject's face are missing or obscured, restore them with photorealistic detail.
+2.  **Color & Pixel Correction:** Restore damaged pixels. Correct faded or shifted colors, returning them to their original, vibrant state.
+3.  **Clarity and Enhancement:** Sharpen the entire image to bring out details. Remove all digital noise, grain, and unwanted spots. Make the subject's features clear and bright.
+The final result should be a total restoration, making the photo look as if it were taken with a modern digital camera or a flagship smartphone.
+
+**HIGHEST PRIORITY RULES:**
+1.  **Preserve Content:** You MUST NOT change, add, or remove any core objects, people, backgrounds, or compositional elements from the original photo, unless the task specifically requires it (like fixing tears or restoring a missing face part).
+2.  **Preserve Likeness:** The faces and features of any people in the photo must be preserved with 100% accuracy. Do not alter their appearance unless restoring damaged/missing parts as instructed above.
+3.  The final output must be a single, restored, high-quality version of the provided image.`;
+
+
+        const parts: any[] = [
+            { text: prompt },
+            { inlineData: { mimeType: restorationFile.mimeType, data: restorationFile.base64 } }
+        ];
+        
+        try {
+            const result = await generateImage(parts);
+            if (result) {
+                displayRestorationResults([result]);
+            } else {
+                throw new Error("Gagal menghasilkan gambar yang dipulihkan.");
+            }
+        } catch (error: any) {
+            console.error("Error restoring photo:", error);
+            showRestorationErrorState(error.message);
+        } finally {
+            setRestorationLoadingState(false);
+        }
+    });
+
+    function setRestorationLoadingState(isLoading: boolean) {
+        if (!generateBtn || !resultsLoader || !resultsPlaceholder || !errorMessage || !resultsGrid) return;
+
+        generateBtn.disabled = isLoading;
+        resultsLoader.classList.toggle('hidden', !isLoading);
+
+        if (isLoading) {
+            resultsPlaceholder.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            resultsGrid.classList.add('hidden');
+            resultsGrid.innerHTML = '';
+        }
+    }
+    
+    function showRestorationErrorState(message: string) {
+        if (!resultsPlaceholder || !resultsLoader || !resultsGrid || !errorMessage || !errorDetails) return;
+
+        resultsPlaceholder.classList.add('hidden');
+        resultsLoader.classList.add('hidden');
+        resultsGrid.classList.add('hidden');
+        errorMessage.classList.remove('hidden');
+        errorDetails.textContent = message;
+    }
+    
+    function displayRestorationResults(images: string[]) {
+        if (!resultsGrid) return;
+
+        setRestorationLoadingState(false);
+        resultsGrid.innerHTML = '';
+        images.forEach(imageUrl => {
+            const container = document.createElement('div');
+            container.className = 'relative group bg-slate-100 rounded-lg flex items-center justify-center aspect-auto';
+
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = "Restored Photo";
+            img.className = "max-w-full max-h-[60vh] object-contain rounded-lg animate-fade-in";
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'absolute top-2 right-2 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity';
+
+            const previewBtn = document.createElement('button');
+            previewBtn.type = 'button';
+            previewBtn.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
+            previewBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>`;
+            previewBtn.onclick = () => showImagePreview(imageUrl);
+
+            const downloadLink = document.createElement('a');
+            downloadLink.href = imageUrl;
+            downloadLink.download = `restored_photo_${Date.now()}.png`;
             downloadLink.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
             downloadLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>`;
             
