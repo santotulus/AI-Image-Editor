@@ -147,6 +147,15 @@ async function generateImage(parts: any[]) {
                 },
             });
 
+            if (!response.candidates || response.candidates.length === 0) {
+                if (response.promptFeedback?.blockReason) {
+                    const reason = response.promptFeedback.blockReason;
+                    const message = response.promptFeedback.blockReasonMessage || 'No additional details provided.';
+                    throw new Error(`Image generation was blocked. Reason: ${reason}. Details: ${message}`);
+                }
+                throw new Error("API response was empty or blocked for an unknown reason.");
+            }
+
             for (const part of response.candidates[0].content.parts) {
                 if (part.inlineData) {
                     const base64ImageBytes = part.inlineData.data;
@@ -154,7 +163,7 @@ async function generateImage(parts: any[]) {
                     return `data:${mimeType};base64,${base64ImageBytes}`;
                 }
             }
-            throw new Error("API response did not contain image data.");
+            throw new Error("API response did not contain image data in the first candidate.");
         } catch (error: any) {
             console.warn(`Attempt ${attempt + 1} failed: ${error.message}`);
             attempt++;
@@ -181,6 +190,7 @@ if (productForm) {
     const resultsGrid = document.getElementById('results-grid') as HTMLElement;
     const errorMessage = document.getElementById('error-message') as HTMLElement;
     const errorDetails = document.getElementById('error-details') as HTMLElement;
+    const resultsLoaderText = resultsLoader.querySelector('p');
 
     const customPromptCheckbox = document.getElementById('custom-prompt-checkbox') as HTMLInputElement;
     const customPromptContainer = document.getElementById('custom-prompt-container') as HTMLElement;
@@ -300,201 +310,208 @@ if (productForm) {
         const customPromptValue = (document.getElementById('custom-prompt-input') as HTMLTextAreaElement).value.trim();
         const NUM_IMAGES = parseInt(imageCountSelect.value, 10);
         
-        const promises = [];
+        const generatedImages: string[] = [];
 
-        for (let i = 0; i < NUM_IMAGES; i++) {
-            let prompt;
-            let parts: any[] = [];
-
-            if(useCustomPrompt) {
-                if (!customPromptValue) {
-                    showModal('Harap isi prompt kustom Anda.');
-                    setLoadingState(false);
-                    return; 
-                }
-                prompt = customPromptValue;
-                
-                const modelSource = (document.querySelector('input[name="model-source"]:checked') as HTMLInputElement).value;
-                const isWithoutModel = withoutModelCheckbox.checked;
-
-                if (!isWithoutModel && modelSource === 'upload' && modelBase64) {
-                    parts = [
-                        { text: prompt },
-                        { inlineData: { mimeType: modelMimeType, data: modelBase64 } },
-                        { inlineData: { mimeType: productMimeType, data: productBase64 } }
-                    ];
-                } else {
-                    parts = [
-                        { text: prompt },
-                        { inlineData: { mimeType: productMimeType, data: productBase64 } }
-                    ];
+        try {
+            for (let i = 0; i < NUM_IMAGES; i++) {
+                if (resultsLoaderText) {
+                    resultsLoaderText.textContent = `Generating image ${i + 1} of ${NUM_IMAGES}...`;
                 }
 
-            } else {
-                const uploadType = uploadTypeSelect.value;
-                const productName = (document.getElementById('product-name') as HTMLInputElement).value.trim();
-                const productDescription = (document.getElementById('product-description') as HTMLInputElement).value.trim();
-                
-                if (uploadType === 'fabric' && !productName) {
-                    showModal('Harap isi Nama Produk Jadi saat mengunggah bahan/kain.');
-                    setLoadingState(false);
-                    return;
-                }
+                let prompt;
+                let parts: any[] = [];
 
-                const withoutModel = withoutModelCheckbox.checked;
-                const modelSource = (document.querySelector('input[name="model-source"]:checked') as HTMLInputElement).value;
-
-                if (!withoutModel && modelSource === 'upload' && !modelBase64) {
-                    showModal('Harap unggah foto model terlebih dahulu.');
-                    setLoadingState(false);
-                    return;
-                }
-                
-                const textPreservationPrompt = " HIGHEST PRIORITY: The most critical instruction is to preserve all text, labels, stickers, and logos on the uploaded product with 100% perfect accuracy. DO NOT CHANGE, GUESS, OR GENERATE ANY TEXT. Replicate the text from the original image exactly as it is, character for character."
-                let productContext = productDescription ? `, which is a ${productDescription}` : '';
-                
-                const isLiquidProduct = productDescription.toLowerCase().includes('minuman') || productDescription.toLowerCase().includes('kopi') || productDescription.toLowerCase().includes('jus') || productDescription.toLowerCase().includes('teh');
-                let liquidEnhancement = "";
-                
-                if (isLiquidProduct) {
-                     if (!withoutModel && (document.getElementById('interaction-type') as HTMLSelectElement).value === 'holding') {
-                        liquidEnhancement = " The image must clearly show dynamic elements like **water splash, melting ice, condensation, or cool mist** to suggest coldness and freshness. ";
-                     } else if (withoutModel) {
-                        liquidEnhancement = " The product is cold, emphasize **condensation or cool mist** in the lighting and background. ";
-                     }
-                } 
-
-                if (withoutModel) {
-                    let lightingPrompt = '';
-                    const lighting = (document.getElementById('lighting-select') as HTMLSelectElement).value;
-                    lightingPrompt = lighting === 'dark'
-                        ? " The scene has dramatic, moody, low-key lighting with deep shadows."
-                        : " The scene has bright, airy, high-key lighting with soft shadows.";
+                if (useCustomPrompt) {
+                    if (!customPromptValue) {
+                        throw new Error('Harap isi prompt kustom Anda.');
+                    }
+                    prompt = customPromptValue;
                     
-                    if (uploadType === 'fabric') {
-                        prompt = `Professional studio product-only photography of a newly created ${productName}${productContext}, displayed neatly (e.g., folded, on a hanger, or on a mannequin).${lightingPrompt} This new ${productName} must be made using the texture, pattern, and colors from the provided fabric image. The product should be presented cleanly on a minimalist background. It is absolutely essential that the pattern from the uploaded image is perfectly and accurately applied to the new product.`;
-                        parts = [ { text: prompt }, { inlineData: { mimeType: productMimeType, data: productBase64 } } ];
-                    } else {
-                        prompt = `Professional photography, creating a stunning visual scene. The provided item${productContext} is the main focus, presented ${studioVariations[i % studioVariations.length]}${liquidEnhancement}${lightingPrompt}.${textPreservationPrompt}`;
-                        parts = [ { text: prompt }, { inlineData: { mimeType: productMimeType, data: productBase64 } } ];
-                    }
-                } else { // With model
-                    const photoStyle = (document.getElementById('photo-style') as HTMLSelectElement).value;
-                    const clothingAttributes = (document.getElementById('clothing-attributes') as HTMLSelectElement).value;
-                    const additionalAttributes = (document.getElementById('additional-attributes') as HTMLSelectElement).value;
-                    const interactionType = (document.getElementById('interaction-type') as HTMLSelectElement).value;
-                    const focusLevel = (document.getElementById('focus-level') as HTMLSelectElement).value;
-                    const modelPose = (document.getElementById('model-pose') as HTMLSelectElement).value;
+                    const modelSource = (document.querySelector('input[name="model-source"]:checked') as HTMLInputElement).value;
+                    const isWithoutModel = withoutModelCheckbox.checked;
 
-                    let fullClothingDesc = clothingAttributes;
-                    if (additionalAttributes) {
-                        fullClothingDesc += `, ${additionalAttributes}`;
-                    }
-
-                    let finalActionPhrase;
-                    if (uploadType === 'fabric') {
-                        finalActionPhrase = `is wearing a newly created ${productName}${productContext}. This new ${productName} must be made using the texture, pattern, and colors from the provided fabric image.`;
-                    } else { 
-                        switch (interactionType) {
-                            case 'wearing': finalActionPhrase = `is wearing the provided item${productContext} naturally.`; break;
-                            case 'holding':
-                                const poseVariations = ["holding", "presenting", "showcasing", "interacting with"];
-                                finalActionPhrase = `is ${poseVariations[i % poseVariations.length]} the provided item${productContext}.`;
-                                break;
-                            case 'none':
-                                const noInteractionPoses = ["posing near", "standing next to", "showcased with"];
-                                finalActionPhrase = `is ${noInteractionPoses[i % noInteractionPoses.length]} the provided item${productContext}, but not touching it.`;
-                                break;
-                            case 'custom':
-                                const customInteraction = (document.getElementById('custom-interaction-input') as HTMLInputElement).value.trim();
-                                if (!customInteraction) {
-                                    showModal('Harap isi deskripsi interaksi kustom Anda.');
-                                    setLoadingState(false);
-                                    return;
-                                }
-                                finalActionPhrase = `${customInteraction} the provided item${productContext}.`;
-                                break;
-                            default: finalActionPhrase = `is holding the provided item${productContext}.`;
-                        }
-                    }
-
-                    if (modelSource === 'upload') {
-                        prompt = `Take the provided photo of a person (first image). The person ${finalActionPhrase}. The person should also be styled with these attributes: ${fullClothingDesc}. The model should be in a ${modelPose} pose. The overall photo style should be transformed to: ${photoStyle}. The final image should be framed as a ${focusLevel}, with the main focus on the product. Match the lighting, shadows, and perspective perfectly. It is absolutely critical that the person's face in the final image is an exact, 100% perfect, and identical match to the face in the uploaded model photo—do not alter their facial features in any way whatsoever.${liquidEnhancement} ${textPreservationPrompt}`;
+                    if (!isWithoutModel && modelSource === 'upload' && modelBase64) {
                         parts = [
                             { text: prompt },
-                            { inlineData: { mimeType: modelMimeType, data: modelBase64! } },
+                            { inlineData: { mimeType: modelMimeType, data: modelBase64 } },
                             { inlineData: { mimeType: productMimeType, data: productBase64 } }
                         ];
-                    } else { // generate model
-                        const gender = (document.getElementById('gender') as HTMLSelectElement).value;
-                        const ethnicity = (document.getElementById('ethnicity') as HTMLSelectElement).value;
-                        let ageRange = (document.getElementById('age-range') as HTMLSelectElement).value;
+                    } else {
+                        parts = [
+                            { text: prompt },
+                            { inlineData: { mimeType: productMimeType, data: productBase64 } }
+                        ];
+                    }
 
-                        if (ageRange === 'custom') {
-                            ageRange = (document.getElementById('custom-age-input') as HTMLInputElement).value.trim();
-                            if (!ageRange) {
-                                showModal('Harap isi rentang usia kustom Anda.');
-                                setLoadingState(false);
-                                return;
+                } else {
+                    const uploadType = uploadTypeSelect.value;
+                    const productName = (document.getElementById('product-name') as HTMLInputElement).value.trim();
+                    const productDescription = (document.getElementById('product-description') as HTMLInputElement).value.trim();
+                    
+                    if (uploadType === 'fabric' && !productName) {
+                         throw new Error('Harap isi Nama Produk Jadi saat mengunggah bahan/kain.');
+                    }
+
+                    const withoutModel = withoutModelCheckbox.checked;
+                    const modelSource = (document.querySelector('input[name="model-source"]:checked') as HTMLInputElement).value;
+
+                    if (!withoutModel && modelSource === 'upload' && !modelBase64) {
+                        throw new Error('Harap unggah foto model terlebih dahulu.');
+                    }
+                    
+                    const textPreservationPrompt = " HIGHEST PRIORITY: The most critical instruction is to preserve all text, labels, stickers, and logos on the uploaded product with 100% perfect accuracy. DO NOT CHANGE, GUESS, OR GENERATE ANY TEXT. Replicate the text from the original image exactly as it is, character for character."
+                    let productContext = productDescription ? `, which is a ${productDescription}` : '';
+                    
+                    const isLiquidProduct = productDescription.toLowerCase().includes('minuman') || productDescription.toLowerCase().includes('kopi') || productDescription.toLowerCase().includes('jus') || productDescription.toLowerCase().includes('teh');
+                    let liquidEnhancement = "";
+                    
+                    if (isLiquidProduct) {
+                         if (!withoutModel && (document.getElementById('interaction-type') as HTMLSelectElement).value === 'holding') {
+                            liquidEnhancement = " The image must clearly show dynamic elements like **water splash, melting ice, condensation, or cool mist** to suggest coldness and freshness. ";
+                         } else if (withoutModel) {
+                            liquidEnhancement = " The product is cold, emphasize **condensation or cool mist** in the lighting and background. ";
+                         }
+                    } 
+
+                    if (withoutModel) {
+                        let lightingPrompt = '';
+                        const lighting = (document.getElementById('lighting-select') as HTMLSelectElement).value;
+                        lightingPrompt = lighting === 'dark'
+                            ? " The scene has dramatic, moody, low-key lighting with deep shadows."
+                            : " The scene has bright, airy, high-key lighting with soft shadows.";
+                        
+                        if (uploadType === 'fabric') {
+                            prompt = `Professional studio product-only photography of a newly created ${productName}${productContext}, displayed neatly (e.g., folded, on a hanger, or on a mannequin).${lightingPrompt} This new ${productName} must be made using the texture, pattern, and colors from the provided fabric image. The product should be presented cleanly on a minimalist background. It is absolutely essential that the pattern from the uploaded image is perfectly and accurately applied to the new product.`;
+                            parts = [ { text: prompt }, { inlineData: { mimeType: productMimeType, data: productBase64! } } ];
+                        } else {
+                            prompt = `Professional photography, creating a stunning visual scene. The provided item${productContext} is the main focus, presented ${studioVariations[i % studioVariations.length]}${liquidEnhancement}${lightingPrompt}.${textPreservationPrompt}`;
+                            parts = [ { text: prompt }, { inlineData: { mimeType: productMimeType, data: productBase64! } } ];
+                        }
+                    } else { // With model
+                        const photoStyle = (document.getElementById('photo-style') as HTMLSelectElement).value;
+                        const clothingAttributes = (document.getElementById('clothing-attributes') as HTMLSelectElement).value;
+                        const additionalAttributes = (document.getElementById('additional-attributes') as HTMLSelectElement).value;
+                        const interactionType = (document.getElementById('interaction-type') as HTMLSelectElement).value;
+                        const focusLevel = (document.getElementById('focus-level') as HTMLSelectElement).value;
+                        const modelPose = (document.getElementById('model-pose') as HTMLSelectElement).value;
+
+                        let fullClothingDesc = clothingAttributes;
+                        if (additionalAttributes) {
+                            fullClothingDesc += `, ${additionalAttributes}`;
+                        }
+
+                        let finalActionPhrase;
+                        if (uploadType === 'fabric') {
+                            finalActionPhrase = `is wearing a newly created ${productName}${productContext}. This new ${productName} must be made using the texture, pattern, and colors from the provided fabric image.`;
+                        } else { 
+                            switch (interactionType) {
+                                case 'wearing': finalActionPhrase = `is wearing the provided item${productContext} naturally.`; break;
+                                case 'holding':
+                                    const poseVariations = ["holding", "presenting", "showcasing", "interacting with"];
+                                    finalActionPhrase = `is ${poseVariations[i % poseVariations.length]} the provided item${productContext}.`;
+                                    break;
+                                case 'none':
+                                    const noInteractionPoses = ["posing near", "standing next to", "showcased with"];
+                                    finalActionPhrase = `is ${noInteractionPoses[i % noInteractionPoses.length]} the provided item${productContext}, but not touching it.`;
+                                    break;
+                                case 'custom':
+                                    const customInteraction = (document.getElementById('custom-interaction-input') as HTMLInputElement).value.trim();
+                                    if (!customInteraction) {
+                                        throw new Error('Harap isi deskripsi interaksi kustom Anda.');
+                                    }
+                                    finalActionPhrase = `${customInteraction} the provided item${productContext}.`;
+                                    break;
+                                default: finalActionPhrase = `is holding the provided item${productContext}.`;
                             }
                         }
 
-                        prompt = `Professional product showcase photo. A ${gender} of ${ethnicity} ethnicity, in the ${ageRange} age range, ${fullClothingDesc}, in a ${modelPose} pose. The model ${finalActionPhrase} The style is: ${photoStyle}. The photograph should be a ${focusLevel}, with the main focus on the product.${liquidEnhancement} ${textPreservationPrompt}`;
-                        parts = [
-                            { text: prompt },
-                            { inlineData: { mimeType: productMimeType, data: productBase64 } }
-                        ];
+                        if (modelSource === 'upload') {
+                            prompt = `Take the provided photo of a person (first image). The person ${finalActionPhrase}. The person should also be styled with these attributes: ${fullClothingDesc}. The model should be in a ${modelPose} pose. The overall photo style should be transformed to: ${photoStyle}. The final image should be framed as a ${focusLevel}, with the main focus on the product. Match the lighting, shadows, and perspective perfectly. It is absolutely critical that the person's face in the final image is an exact, 100% perfect, and identical match to the face in the uploaded model photo—do not alter their facial features in any way whatsoever.${liquidEnhancement} ${textPreservationPrompt}`;
+                            parts = [
+                                { text: prompt },
+                                { inlineData: { mimeType: modelMimeType, data: modelBase64! } },
+                                { inlineData: { mimeType: productMimeType, data: productBase64! } }
+                            ];
+                        } else { // generate model
+                            const gender = (document.getElementById('gender') as HTMLSelectElement).value;
+                            const ethnicity = (document.getElementById('ethnicity') as HTMLSelectElement).value;
+                            let ageRange = (document.getElementById('age-range') as HTMLSelectElement).value;
+
+                            if (ageRange === 'custom') {
+                                ageRange = (document.getElementById('custom-age-input') as HTMLInputElement).value.trim();
+                                if (!ageRange) {
+                                    throw new Error('Harap isi rentang usia kustom Anda.');
+                                }
+                            }
+
+                            prompt = `Professional product showcase photo. A ${gender} of ${ethnicity} ethnicity, in the ${ageRange} age range, ${fullClothingDesc}, in a ${modelPose} pose. The model ${finalActionPhrase} The style is: ${photoStyle}. The photograph should be a ${focusLevel}, with the main focus on the product.${liquidEnhancement} ${textPreservationPrompt}`;
+                            parts = [
+                                { text: prompt },
+                                { inlineData: { mimeType: productMimeType, data: productBase64! } }
+                            ];
+                        }
                     }
                 }
+                const result = await generateImage(parts);
+                if (result) {
+                    generatedImages.push(result);
+                }
             }
-            promises.push(generateImage(parts));
-        }
-
-        try {
-            const results = await Promise.all(promises);
-            displayResults(results.filter(r => r) as string[]);
+            displayResults(generatedImages);
         } catch (error: any) {
             console.error("Error generating images:", error);
+            if (generatedImages.length > 0) {
+                displayResults(generatedImages);
+            }
             showErrorState(error.message);
         } finally {
             setLoadingState(false);
+            if (resultsLoaderText) {
+                resultsLoaderText.textContent = `Menghasilkan gambar... ini mungkin memakan waktu yang sangat lama.`;
+            }
         }
     });
 
+
     function displayResults(images: string[]) {
         resultsGrid.innerHTML = '';
-        images.forEach(imageUrl => {
-            const container = document.createElement('div');
-            container.className = 'relative group bg-slate-100 rounded-lg flex items-center justify-center aspect-square';
+        if (images.length > 0) {
+            resultsPlaceholder.classList.add('hidden');
+            images.forEach(imageUrl => {
+                const container = document.createElement('div');
+                container.className = 'relative group bg-slate-100 rounded-lg flex items-center justify-center aspect-square';
 
-            const img = document.createElement('img');
-            img.src = imageUrl;
-            img.alt = "Generated Showcase Image";
-            img.className = "w-full h-full object-contain rounded-lg animate-fade-in";
-            
-            const buttonContainer = document.createElement('div');
-            buttonContainer.className = 'absolute top-2 right-2 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity';
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = "Generated Showcase Image";
+                img.className = "w-full h-full object-contain rounded-lg animate-fade-in";
+                
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'absolute top-2 right-2 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity';
 
-            const previewBtn = document.createElement('button');
-            previewBtn.type = 'button';
-            previewBtn.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
-            previewBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>`;
-            previewBtn.onclick = () => showImagePreview(imageUrl);
+                const previewBtn = document.createElement('button');
+                previewBtn.type = 'button';
+                previewBtn.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
+                previewBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>`;
+                previewBtn.onclick = () => showImagePreview(imageUrl);
 
-            const downloadLink = document.createElement('a');
-            downloadLink.href = imageUrl;
-            downloadLink.download = `product_showcase_${Date.now()}.png`;
-            downloadLink.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
-            downloadLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>`;
-            
-            buttonContainer.appendChild(previewBtn);
-            buttonContainer.appendChild(downloadLink);
-            
-            container.appendChild(img);
-            container.appendChild(buttonContainer);
-            resultsGrid.appendChild(container);
-        });
-        resultsGrid.classList.remove('hidden');
+                const downloadLink = document.createElement('a');
+                downloadLink.href = imageUrl;
+                downloadLink.download = `product_showcase_${Date.now()}.png`;
+                downloadLink.className = 'p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75';
+                downloadLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>`;
+                
+                buttonContainer.appendChild(previewBtn);
+                buttonContainer.appendChild(downloadLink);
+                
+                container.appendChild(img);
+                container.appendChild(buttonContainer);
+                resultsGrid.appendChild(container);
+            });
+            resultsGrid.classList.remove('hidden');
+        } else {
+            resultsPlaceholder.classList.remove('hidden');
+        }
     }
 
     function setLoadingState(isLoading: boolean) {
@@ -502,16 +519,26 @@ if (productForm) {
         btnText.style.display = isLoading ? 'none' : 'inline';
         btnSpinner.style.display = isLoading ? 'inline-block' : 'none';
         
-        resultsPlaceholder.classList.toggle('hidden', isLoading);
+        if (isLoading) {
+            resultsPlaceholder.classList.add('hidden');
+        }
+        
         errorMessage.classList.add('hidden');
-        resultsGrid.classList.add('hidden');
-        resultsLoader.classList.toggle('hidden', !isLoading);
+        if (!isLoading) {
+            resultsLoader.classList.add('hidden');
+        } else {
+            resultsGrid.classList.add('hidden');
+            resultsLoader.classList.remove('hidden');
+        }
     }
     
     function showErrorState(message: string) {
          resultsPlaceholder.classList.add('hidden');
          resultsLoader.classList.add('hidden');
-         resultsGrid.classList.add('hidden');
+         // Don't hide the grid if there are partial results
+         if (resultsGrid.children.length === 0) {
+            resultsGrid.classList.add('hidden');
+         }
          errorMessage.classList.remove('hidden');
          errorDetails.textContent = message;
     }
@@ -542,14 +569,14 @@ if (modelForm) {
             return;
         }
         
-        setModelLoadingState(true, 'Menghasilkan foto model...');
+        const imageCount = parseInt(imageCountSelect.value, 10);
+        setModelLoadingState(true, `Menghasilkan foto model (0/${imageCount})...`);
 
         const photoType = (document.getElementById('model-photo-type') as HTMLSelectElement).value;
         const pose = (document.getElementById('model-page-pose') as HTMLSelectElement).value;
         const clothing = (document.getElementById('model-page-clothing') as HTMLSelectElement).value;
         const focus = (document.getElementById('model-page-focus') as HTMLSelectElement).value;
-        const imageCount = parseInt(imageCountSelect.value, 10);
-
+        
         const prompt = `A ${photoType} of the person in the provided image. They should be in a ${pose} pose, ${clothing}. The photo must be a ${focus}. The final image should have the exact same facial features as the original image.`;
 
         const parts = [
@@ -557,16 +584,22 @@ if (modelForm) {
             { inlineData: { mimeType: modelPageMimeType, data: modelPageBase64 } }
         ];
 
-        const promises = Array(imageCount).fill(0).map(() => generateImage(parts));
-
+        const generatedImages: string[] = [];
         try {
-            const results = await Promise.all(promises);
-            displayModelResults(results.filter(r => r) as string[]);
+            for (let i = 0; i < imageCount; i++) {
+                setModelLoadingState(true, `Generating image ${i + 1} of ${imageCount}...`);
+                const result = await generateImage(parts);
+                if (result) {
+                    generatedImages.push(result);
+                }
+            }
+            displayModelResults(generatedImages);
         } catch (error: any) {
             console.error("Error generating model images:", error);
             setModelLoadingState(true, `Error: ${error.message}`);
-        } finally {
-             // Keep loading state until results are shown
+             if (generatedImages.length > 0) {
+                displayModelResults(generatedImages); // Show partial results
+             }
         }
     });
 
@@ -580,7 +613,9 @@ if (modelForm) {
                 </div>`;
             statusContainer.classList.remove('hidden');
             outputContainer.classList.add('hidden');
-            outputContainer.innerHTML = '';
+            if (!message.toLowerCase().includes('error')) {
+                outputContainer.innerHTML = '';
+            }
         } else {
              statusContainer.classList.add('hidden');
              outputContainer.classList.remove('hidden');
@@ -633,6 +668,7 @@ if (pasPhotoForm) {
     const resultsGrid = document.getElementById('pas-photo-results-grid') as HTMLElement;
     const errorMessage = document.getElementById('pas-photo-error-message') as HTMLElement;
     const errorDetails = document.getElementById('pas-photo-error-details') as HTMLElement;
+    const resultsLoaderText = resultsLoader.querySelector('p');
     
     let pasPhotoMimeType = "image/jpeg";
 
@@ -683,20 +719,25 @@ if (pasPhotoForm) {
             { inlineData: { mimeType: pasPhotoMimeType, data: pasPhotoBase64 } }
         ];
 
-        const promises = Array(imageCount).fill(0).map(() => generateImage(parts));
-
+        const generatedImages: string[] = [];
         try {
-            const results = await Promise.all(promises);
-            if (results && results.length > 0) {
-                displayPasPhotoResults(results.filter(r => r) as string[], photoSize);
-            } else {
-                throw new Error("Failed to generate any images.");
+            for (let i = 0; i < imageCount; i++) {
+                if(resultsLoaderText) resultsLoaderText.textContent = `Generating image ${i + 1} of ${imageCount}...`;
+                const result = await generateImage(parts);
+                if (result) {
+                    generatedImages.push(result);
+                }
             }
+            displayPasPhotoResults(generatedImages, photoSize);
         } catch (error: any) {
             console.error("Error generating passport photo:", error);
             showPasPhotoErrorState(error.message);
+            if (generatedImages.length > 0) {
+                 displayPasPhotoResults(generatedImages, photoSize);
+            }
         } finally {
             setPasPhotoLoadingState(false);
+            if(resultsLoaderText) resultsLoaderText.textContent = `Memproses foto...`;
         }
     });
 
@@ -714,16 +755,15 @@ if (pasPhotoForm) {
             resultsPlaceholder.classList.add('hidden');
             errorMessage.classList.add('hidden');
             resultsGrid.classList.add('hidden');
-        } else {
-             // When loading is finished, don't hide the grid again.
-             // Let the display function handle grid visibility.
         }
     }
     
     function showPasPhotoErrorState(message: string) {
         resultsPlaceholder.classList.add('hidden');
         resultsLoader.classList.add('hidden');
-        resultsGrid.classList.add('hidden');
+        if (resultsGrid.children.length === 0) {
+            resultsGrid.classList.add('hidden');
+        }
         errorMessage.classList.remove('hidden');
         errorDetails.textContent = message;
     }
@@ -783,6 +823,7 @@ if (travelForm) {
     const resultsGrid = document.getElementById('travel-results-grid') as HTMLElement;
     const errorMessage = document.getElementById('travel-error-message') as HTMLElement;
     const errorDetails = document.getElementById('travel-error-details') as HTMLElement;
+    const resultsLoaderText = resultsLoader.querySelector('p');
     
     let travelFile1: { base64: string, mimeType: string } | null = null;
     let travelFile2: { base64: string, mimeType: string } | null = null;
@@ -892,19 +933,25 @@ if (travelForm) {
             parts.push({ inlineData: { mimeType: travelFile2.mimeType, data: travelFile2.base64 } });
         }
         
-        const promises: Promise<string | undefined>[] = [];
-        for (let i = 0; i < imageCount; i++) {
-            promises.push(generateImage(parts));
-        }
-
+        const generatedImages: string[] = [];
         try {
-            const results = await Promise.all(promises);
-            displayTravelResults(results.filter(r => r) as string[]);
+            for (let i = 0; i < imageCount; i++) {
+                if(resultsLoaderText) resultsLoaderText.textContent = `Generating image ${i + 1} of ${imageCount}...`;
+                const result = await generateImage(parts);
+                if (result) {
+                    generatedImages.push(result);
+                }
+            }
+            displayTravelResults(generatedImages);
         } catch (error: any) {
             console.error("Error generating travel photo:", error);
             showTravelErrorState(error.message);
+            if (generatedImages.length > 0) {
+                 displayTravelResults(generatedImages);
+            }
         } finally {
             setTravelLoadingState(false);
+            if(resultsLoaderText) resultsLoaderText.textContent = `Memproses foto...`;
         }
     });
 
@@ -923,7 +970,9 @@ if (travelForm) {
     function showTravelErrorState(message: string) {
         resultsPlaceholder.classList.add('hidden');
         resultsLoader.classList.add('hidden');
-        resultsGrid.classList.add('hidden');
+        if (resultsGrid.children.length === 0) {
+            resultsGrid.classList.add('hidden');
+        }
         errorMessage.classList.remove('hidden');
         errorDetails.textContent = message;
     }
