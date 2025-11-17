@@ -944,6 +944,13 @@ if (travelForm) {
             'pisa': 'the Leaning Tower of Pisa in Italy',
             'liberty': 'the Statue of Liberty in New York, USA',
             'kremlin': 'the Kremlin in Moscow, Russia',
+            'opera_house': 'the Sydney Opera House in Australia',
+            'dotonbori': 'the vibrant and bustling Dotonbori district in Osaka, Japan at night with all the neon lights',
+            'shibuya': 'the iconic Shibuya Crossing in Tokyo, Japan, with crowds of people',
+            'arashiyama': 'the serene Arashiyama Bamboo Forest in Kyoto, Japan',
+            'fushimi_inari': 'the famous Fushimi Inari Shrine in Kyoto, Japan, with its thousands of red torii gates',
+            'times_square': "the dazzling Times Square in New York, USA, with its bright billboards and bustling atmosphere at night",
+            'rinjani': 'the peak of Mount Rinjani in Lombok, Indonesia, with a breathtaking view of the crater lake and sunrise',
         };
         const bgDescription = backgroundMap[bgValue];
         
@@ -955,6 +962,13 @@ if (travelForm) {
             'pisa': 'summer tourist attire, like a light shirt or dress, suitable for a sunny day in Italy',
             'liberty': 'casual American tourist style, like jeans and a t-shirt or a light jacket',
             'kremlin': 'warm and stylish clothing suitable for Moscow, such as a smart coat or jacket',
+            'opera_house': 'stylish, modern city wear suitable for a sunny day in Sydney',
+            'dotonbori': 'trendy, fashionable Japanese streetwear, perfect for a night out in a bustling city',
+            'shibuya': 'modern, stylish Tokyo street fashion, like you are part of the vibrant crowd',
+            'arashiyama': 'comfortable and elegant walking attire, such as a light coat or a flowing dress, fitting for a serene forest',
+            'fushimi_inari': 'respectful and comfortable walking clothes suitable for a shrine visit, perhaps with a touch of traditional style',
+            'times_square': 'casual and cool New York City style, like a stylish jacket, jeans, and sneakers, fitting for a night in the city',
+            'rinjani': 'warm, layered hiking and trekking gear, including a windproof jacket, beanie, and gloves, prepared for a mountain summit',
         };
         const clothingDescription = clothingMap[bgValue];
 
