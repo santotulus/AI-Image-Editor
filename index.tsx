@@ -1,19 +1,15 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 
-if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set.");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-
 // --- Sidebar Toggle Script ---
 const mobileMenuButton = document.getElementById('mobile-menu-button') as HTMLButtonElement;
 const sidebar = document.getElementById('sidebar') as HTMLElement;
 
-mobileMenuButton.addEventListener('click', () => {
-    sidebar.classList.toggle('-translate-x-full');
-});
+if (mobileMenuButton && sidebar) {
+    mobileMenuButton.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+    });
+}
+
 
 // --- Page Navigation Script ---
 const navProductBtn = document.getElementById('nav-product-btn') as HTMLAnchorElement;
@@ -28,43 +24,57 @@ const travelPage = document.getElementById('travel-generator-page') as HTMLEleme
 function setActiveNav(activeBtn: HTMLAnchorElement) {
     const allBtns = [navProductBtn, navModelBtn, navPasPhotoBtn, navTravelBtn];
     allBtns.forEach(btn => {
-        btn.classList.remove('bg-indigo-600', 'text-white');
-        btn.classList.add('hover:bg-slate-800');
+        if(btn) {
+            btn.classList.remove('bg-indigo-600', 'text-white');
+            btn.classList.add('hover:bg-slate-800');
+        }
     });
-    activeBtn.classList.add('bg-indigo-600', 'text-white');
-    activeBtn.classList.remove('hover:bg-slate-800');
+    if(activeBtn) {
+        activeBtn.classList.add('bg-indigo-600', 'text-white');
+        activeBtn.classList.remove('hover:bg-slate-800');
+    }
 }
 
 function showPage(pageToShow: HTMLElement) {
     const allPages = [productPage, modelPage, pasPhotoPage, travelPage];
-    allPages.forEach(page => page.classList.add('hidden'));
-    pageToShow.classList.remove('hidden');
+    allPages.forEach(page => {
+        if(page) page.classList.add('hidden');
+    });
+    if(pageToShow) pageToShow.classList.remove('hidden');
 }
 
 
-navProductBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    showPage(productPage);
-    setActiveNav(navProductBtn);
-});
+if (navProductBtn) {
+    navProductBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage(productPage);
+        setActiveNav(navProductBtn);
+    });
+}
 
-navModelBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    showPage(modelPage);
-    setActiveNav(navModelBtn);
-});
+if (navModelBtn) {
+    navModelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage(modelPage);
+        setActiveNav(navModelBtn);
+    });
+}
 
-navPasPhotoBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    showPage(pasPhotoPage);
-    setActiveNav(navPasPhotoBtn);
-});
+if (navPasPhotoBtn) {
+    navPasPhotoBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage(pasPhotoPage);
+        setActiveNav(navPasPhotoBtn);
+    });
+}
 
-navTravelBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    showPage(travelPage);
-    setActiveNav(navTravelBtn);
-});
+if (navTravelBtn) {
+    navTravelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage(travelPage);
+        setActiveNav(navTravelBtn);
+    });
+}
 
 
 // --- SHARED SCRIPT ---
@@ -79,39 +89,51 @@ const closeModalBtn = document.getElementById('close-modal-btn') as HTMLButtonEl
 
 function setupFileUploader(inputId: string, previewId: string, promptId: string, callback: (base64: string, fileType: string) => void) {
     const fileInput = document.getElementById(inputId) as HTMLInputElement;
-    fileInput.addEventListener('change', (event) => {
-        const file = (event.target as HTMLInputElement).files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target?.result as string;
-                (document.getElementById(previewId) as HTMLImageElement).src = result;
-                document.getElementById(previewId)?.classList.remove('hidden');
-                document.getElementById(promptId)?.classList.add('hidden');
-                const base64 = result.split(',')[1];
-                callback(base64, file.type);
-            };
-            reader.readAsDataURL(file);
+    if (fileInput) {
+        fileInput.addEventListener('change', (event) => {
+            const file = (event.target as HTMLInputElement).files?.[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const result = e.target?.result as string;
+                    const previewEl = document.getElementById(previewId) as HTMLImageElement;
+                    if(previewEl) {
+                        previewEl.src = result;
+                        previewEl.classList.remove('hidden');
+                    }
+                    const promptEl = document.getElementById(promptId);
+                    if(promptEl) {
+                        promptEl.classList.add('hidden');
+                    }
+                    
+                    const base64 = result.split(',')[1];
+                    callback(base64, file.type);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+
+function showImagePreview(imageUrl: string) {
+    if(modalImage) modalImage.src = imageUrl;
+    if(imagePreviewModal) imagePreviewModal.classList.remove('hidden');
+}
+
+function hideImagePreview() {
+    if(imagePreviewModal) imagePreviewModal.classList.add('hidden');
+    if(modalImage) modalImage.src = ''; 
+}
+
+if (closeModalBtn) closeModalBtn.addEventListener('click', hideImagePreview);
+if (imagePreviewModal) {
+    imagePreviewModal.addEventListener('click', (e) => {
+        if (e.target === imagePreviewModal) {
+            hideImagePreview();
         }
     });
 }
 
-function showImagePreview(imageUrl: string) {
-    modalImage.src = imageUrl;
-    imagePreviewModal.classList.remove('hidden');
-}
-
-function hideImagePreview() {
-    imagePreviewModal.classList.add('hidden');
-    modalImage.src = ''; 
-}
-
-closeModalBtn.addEventListener('click', hideImagePreview);
-imagePreviewModal.addEventListener('click', (e) => {
-    if (e.target === imagePreviewModal) {
-        hideImagePreview();
-    }
-});
 
 function showModal(message: string) {
     const modalBackdrop = document.createElement('div');
@@ -134,6 +156,9 @@ function showModal(message: string) {
 }
 
 async function generateImage(parts: any[]) {
+    // Lazy initialization of the AI client to prevent script crash on load
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
     let attempt = 0;
     const maxAttempts = 5;
     let delay = 1000;
@@ -190,7 +215,7 @@ if (productForm) {
     const resultsGrid = document.getElementById('results-grid') as HTMLElement;
     const errorMessage = document.getElementById('error-message') as HTMLElement;
     const errorDetails = document.getElementById('error-details') as HTMLElement;
-    const resultsLoaderText = resultsLoader.querySelector('p');
+    const resultsLoaderText = resultsLoader ? resultsLoader.querySelector('p') : null;
 
     const customPromptCheckbox = document.getElementById('custom-prompt-checkbox') as HTMLInputElement;
     const customPromptContainer = document.getElementById('custom-prompt-container') as HTMLElement;
@@ -266,6 +291,8 @@ if (productForm) {
     });
 
     function updateCustomizationView() {
+        if (!customPromptCheckbox || !guidedOptions || !customPromptContainer || !withoutModelCheckbox || !productNameContainer || !uploadTypeSelect || !lightingContainer || !sharedModelOptions || !modelSourceContainer || !uploadModelSection || !modelOptionsGenerate || !interactionTypeSelect || !customInteractionContainer || !ageRangeSelect || !customAgeContainer) return;
+        
         const useCustomPrompt = customPromptCheckbox.checked;
         guidedOptions.disabled = useCustomPrompt;
         guidedOptions.style.opacity = useCustomPrompt ? '0.5' : '1';
@@ -274,7 +301,7 @@ if (productForm) {
         if (useCustomPrompt) return;
 
         const isWithoutModel = withoutModelCheckbox.checked;
-        const modelSource = (document.querySelector('input[name="model-source"]:checked') as HTMLInputElement).value;
+        const modelSource = (document.querySelector('input[name="model-source"]:checked') as HTMLInputElement)?.value;
         const uploadType = uploadTypeSelect.value;
         
         productNameContainer.style.display = uploadType === 'fabric' ? 'block' : 'none';
@@ -294,7 +321,7 @@ if (productForm) {
     }
     
     [customPromptCheckbox, uploadTypeSelect, withoutModelCheckbox, generateModelRadio, uploadModelRadio, interactionTypeSelect, ageRangeSelect].forEach(el => {
-        el.addEventListener('change', updateCustomizationView);
+        if(el) el.addEventListener('change', updateCustomizationView);
     });
 
     productForm.addEventListener('submit', async (event) => {
@@ -315,7 +342,7 @@ if (productForm) {
         try {
             for (let i = 0; i < NUM_IMAGES; i++) {
                 if (resultsLoaderText) {
-                    resultsLoaderText.textContent = `Generating image ${i + 1} of ${NUM_IMAGES}...`;
+                    resultsLoaderText.textContent = `Menghasilkan gambar... ini mungkin memakan waktu yang sangat lama.`;
                 }
 
                 let prompt;
@@ -474,6 +501,7 @@ if (productForm) {
 
 
     function displayResults(images: string[]) {
+        if (!resultsGrid || !resultsPlaceholder) return;
         resultsGrid.innerHTML = '';
         if (images.length > 0) {
             resultsPlaceholder.classList.add('hidden');
@@ -515,6 +543,8 @@ if (productForm) {
     }
 
     function setLoadingState(isLoading: boolean) {
+        if (!generateBtn || !btnText || !btnSpinner || !errorMessage || !resultsLoader || !resultsGrid || !resultsPlaceholder) return;
+        
         generateBtn.disabled = isLoading;
         btnText.style.display = isLoading ? 'none' : 'inline';
         btnSpinner.style.display = isLoading ? 'inline-block' : 'none';
@@ -533,6 +563,8 @@ if (productForm) {
     }
     
     function showErrorState(message: string) {
+        if (!resultsPlaceholder || !resultsLoader || !resultsGrid || !errorMessage || !errorDetails) return;
+        
          resultsPlaceholder.classList.add('hidden');
          resultsLoader.classList.add('hidden');
          // Don't hide the grid if there are partial results
@@ -570,7 +602,7 @@ if (modelForm) {
         }
         
         const imageCount = parseInt(imageCountSelect.value, 10);
-        setModelLoadingState(true, `Menghasilkan foto model (0/${imageCount})...`);
+        setModelLoadingState(true, `Menghasilkan foto model...`);
 
         const photoType = (document.getElementById('model-photo-type') as HTMLSelectElement).value;
         const pose = (document.getElementById('model-page-pose') as HTMLSelectElement).value;
@@ -581,13 +613,13 @@ if (modelForm) {
 
         const parts = [
             { text: prompt },
-            { inlineData: { mimeType: modelPageMimeType, data: modelPageBase64 } }
+            { inlineData: { mimeType: modelPageMimeType, data: modelPageBase64! } }
         ];
 
         const generatedImages: string[] = [];
         try {
             for (let i = 0; i < imageCount; i++) {
-                setModelLoadingState(true, `Generating image ${i + 1} of ${imageCount}...`);
+                setModelLoadingState(true, `Menghasilkan foto model...`);
                 const result = await generateImage(parts);
                 if (result) {
                     generatedImages.push(result);
@@ -604,6 +636,8 @@ if (modelForm) {
     });
 
     function setModelLoadingState(isLoading: boolean, message: string) {
+        if (!generateBtn || !statusContainer || !outputContainer) return;
+
         generateBtn.disabled = isLoading;
         if (isLoading) {
             statusContainer.innerHTML = `
@@ -623,6 +657,7 @@ if (modelForm) {
     }
 
     function displayModelResults(images: string[]) {
+        if(!outputContainer) return;
         setModelLoadingState(false, '');
         outputContainer.innerHTML = '';
         images.forEach(imageUrl => {
@@ -668,7 +703,7 @@ if (pasPhotoForm) {
     const resultsGrid = document.getElementById('pas-photo-results-grid') as HTMLElement;
     const errorMessage = document.getElementById('pas-photo-error-message') as HTMLElement;
     const errorDetails = document.getElementById('pas-photo-error-details') as HTMLElement;
-    const resultsLoaderText = resultsLoader.querySelector('p');
+    const resultsLoaderText = resultsLoader ? resultsLoader.querySelector('p') : null;
     
     let pasPhotoMimeType = "image/jpeg";
 
@@ -716,13 +751,13 @@ if (pasPhotoForm) {
 
         const parts = [
             { text: prompt },
-            { inlineData: { mimeType: pasPhotoMimeType, data: pasPhotoBase64 } }
+            { inlineData: { mimeType: pasPhotoMimeType, data: pasPhotoBase64! } }
         ];
 
         const generatedImages: string[] = [];
         try {
             for (let i = 0; i < imageCount; i++) {
-                if(resultsLoaderText) resultsLoaderText.textContent = `Generating image ${i + 1} of ${imageCount}...`;
+                if(resultsLoaderText) resultsLoaderText.textContent = `Memproses foto...`;
                 const result = await generateImage(parts);
                 if (result) {
                     generatedImages.push(result);
@@ -742,6 +777,8 @@ if (pasPhotoForm) {
     });
 
     function setPasPhotoLoadingState(isLoading: boolean) {
+        if (!generateBtn || !resultsLoader || !resultsPlaceholder || !errorMessage || !resultsGrid) return;
+        
         generateBtn.disabled = isLoading;
         (document.getElementById('pas-photo-upload-input') as HTMLInputElement).disabled = isLoading;
         (document.getElementById('pas-photo-bg-color') as HTMLSelectElement).disabled = isLoading;
@@ -759,6 +796,7 @@ if (pasPhotoForm) {
     }
     
     function showPasPhotoErrorState(message: string) {
+        if (!resultsPlaceholder || !resultsLoader || !resultsGrid || !errorMessage || !errorDetails) return;
         resultsPlaceholder.classList.add('hidden');
         resultsLoader.classList.add('hidden');
         if (resultsGrid.children.length === 0) {
@@ -769,6 +807,7 @@ if (pasPhotoForm) {
     }
     
     function displayPasPhotoResults(images: string[], photoSize: string) {
+        if (!resultsGrid) return;
         resultsGrid.innerHTML = '';
         
         const sizeClassMap: { [key: string]: { container: string, image: string } } = {
@@ -823,7 +862,7 @@ if (travelForm) {
     const resultsGrid = document.getElementById('travel-results-grid') as HTMLElement;
     const errorMessage = document.getElementById('travel-error-message') as HTMLElement;
     const errorDetails = document.getElementById('travel-error-details') as HTMLElement;
-    const resultsLoaderText = resultsLoader.querySelector('p');
+    const resultsLoaderText = resultsLoader ? resultsLoader.querySelector('p') : null;
     
     let travelFile1: { base64: string, mimeType: string } | null = null;
     let travelFile2: { base64: string, mimeType: string } | null = null;
@@ -847,38 +886,42 @@ if (travelForm) {
         deleteBtn.classList.add('hidden');
     };
     
-    deleteBtn1.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        resetUploader(
-            (val) => { travelFile1 = val; },
-            'travel-upload-input-1',
-            'travel-image-preview-1',
-            'travel-upload-prompt-1',
-            deleteBtn1
-        );
-    });
+    if(deleteBtn1) {
+        deleteBtn1.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            resetUploader(
+                (val) => { travelFile1 = val; },
+                'travel-upload-input-1',
+                'travel-image-preview-1',
+                'travel-upload-prompt-1',
+                deleteBtn1
+            );
+        });
+    }
 
-    deleteBtn2.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        resetUploader(
-            (val) => { travelFile2 = val; },
-            'travel-upload-input-2',
-            'travel-image-preview-2',
-            'travel-upload-prompt-2',
-            deleteBtn2
-        );
-    });
+    if(deleteBtn2) {
+        deleteBtn2.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            resetUploader(
+                (val) => { travelFile2 = val; },
+                'travel-upload-input-2',
+                'travel-image-preview-2',
+                'travel-upload-prompt-2',
+                deleteBtn2
+            );
+        });
+    }
 
     setupFileUploader('travel-upload-input-1', 'travel-image-preview-1', 'travel-upload-prompt-1', (base64, fileType) => {
         travelFile1 = { base64, mimeType: fileType };
-        deleteBtn1.classList.remove('hidden');
+        if(deleteBtn1) deleteBtn1.classList.remove('hidden');
     });
 
     setupFileUploader('travel-upload-input-2', 'travel-image-preview-2', 'travel-upload-prompt-2', (base64, fileType) => {
         travelFile2 = { base64, mimeType: fileType };
-        deleteBtn2.classList.remove('hidden');
+        if(deleteBtn2) deleteBtn2.classList.remove('hidden');
     });
 
     travelForm.addEventListener('submit', async (e) => {
@@ -936,7 +979,7 @@ if (travelForm) {
         const generatedImages: string[] = [];
         try {
             for (let i = 0; i < imageCount; i++) {
-                if(resultsLoaderText) resultsLoaderText.textContent = `Generating image ${i + 1} of ${imageCount}...`;
+                if(resultsLoaderText) resultsLoaderText.textContent = `Memproses foto...`;
                 const result = await generateImage(parts);
                 if (result) {
                     generatedImages.push(result);
@@ -956,6 +999,8 @@ if (travelForm) {
     });
 
     function setTravelLoadingState(isLoading: boolean) {
+        if (!generateBtn || !resultsLoader || !resultsPlaceholder || !errorMessage || !resultsGrid) return;
+
         generateBtn.disabled = isLoading;
         resultsLoader.classList.toggle('hidden', !isLoading);
 
@@ -968,6 +1013,8 @@ if (travelForm) {
     }
     
     function showTravelErrorState(message: string) {
+        if (!resultsPlaceholder || !resultsLoader || !resultsGrid || !errorMessage || !errorDetails) return;
+
         resultsPlaceholder.classList.add('hidden');
         resultsLoader.classList.add('hidden');
         if (resultsGrid.children.length === 0) {
@@ -978,6 +1025,8 @@ if (travelForm) {
     }
     
     function displayTravelResults(images: string[]) {
+        if (!resultsGrid) return;
+
         setTravelLoadingState(false);
         resultsGrid.innerHTML = '';
         images.forEach(imageUrl => {
