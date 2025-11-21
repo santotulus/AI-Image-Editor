@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -357,7 +358,10 @@
             
                         <!-- Right Panel: Results -->
                         <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
-                            <h2 class="text-xl font-semibold mb-4 text-slate-700">Hasil Showcase Anda</h2>
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-slate-700">Hasil Showcase Anda</h2>
+                                <button id="product-download-all-btn" class="hidden px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Download Semua</button>
+                            </div>
                             <div id="results-container" class="results-grid flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
                                 <!-- Initial Placeholder -->
                                 <div id="results-placeholder" class="text-center text-slate-500">
@@ -480,7 +484,10 @@
             
                         <!-- Right Panel: Results -->
                         <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
-                             <h2 class="text-xl font-semibold mb-4 text-slate-700">Hasil Foto Model Anda</h2>
+                             <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-slate-700">Hasil Foto Model Anda</h2>
+                                <button id="model-download-all-btn" class="hidden px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Download Semua</button>
+                             </div>
                              <div id="model-page-status" class="mb-4 text-center p-4 min-h-[400px] flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 text-slate-500">
                                 <div>
                                     <svg class="w-12 h-12 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -572,7 +579,10 @@
             
                         <!-- Right Panel: Results -->
                         <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
-                            <h2 class="text-xl font-semibold mb-4 text-slate-700">Hasil Pas Photo Anda</h2>
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-slate-700">Hasil Pas Photo Anda</h2>
+                                <button id="pas-photo-download-all-btn" class="hidden px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Download Semua</button>
+                            </div>
                             <div id="pas-photo-results-container" class="results-grid flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
                                 <!-- Initial Placeholder -->
                                 <div id="pas-photo-results-placeholder" class="text-center text-slate-500">
@@ -660,10 +670,18 @@
                                            <option value="eiffel">Menara Eifel, Prancis</option>
                                            <option value="fuji">Gunung Fuji, Jepang</option>
                                            <option value="sakura">Bunga Sakura, Jepang</option>
+                                           <option value="shinjuku">Shinjuku at night, Tokyo</option>
+                                           <option value="shirakawago">Shirakawago Winter, Jepang</option>
                                            <option value="windmill">Kincir Angin, Belanda</option>
+                                           <option value="big_ben">Big Ben, London</option>
+                                           <option value="abbey_road">Abbey Road, London</option>
                                            <option value="pisa">Menara Pisa, Italia</option>
                                            <option value="liberty">Patung Liberty, Amerika</option>
+                                           <option value="namsan">Namsan Tower, Seoul</option>
+                                           <option value="merlion">Merlion, Singapore</option>
+                                           <option value="petronas">Petronas Tower, Malaysia</option>
                                            <option value="kremlin">Kremlin, Rusia</option>
+                                           <option value="pyramids">Piramid, Mesir</option>
                                            <option value="opera_house">Opera House, Sidney</option>
                                            <option value="dotonbori">Dotonbori, Osaka</option>
                                            <option value="shibuya">Shibuya Crossing, Tokyo</option>
@@ -673,16 +691,29 @@
                                            <option value="rinjani">Puncak Gunung Rinjani, Lombok</option>
                                        </select>
                                    </div>
+                                   <div>
+                                       <label for="travel-season-select" class="block text-sm font-medium text-slate-600 mb-1">Pilih Musim</label>
+                                       <select id="travel-season-select" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                           <option value="auto">Otomatis</option>
+                                           <option value="winter">Musim Dingin</option>
+                                           <option value="spring">Musim Semi</option>
+                                           <option value="autumn">Musim Gugur</option>
+                                       </select>
+                                   </div>
                                </div>
 
                                <!-- 3. Jumlah Gambar -->
                                <div class="mb-6">
                                    <label for="travel-image-count" class="block text-lg font-semibold mb-2 text-slate-700">3. Jumlah Gambar</label>
                                    <select id="travel-image-count" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                       <option value="1" selected>1 Gambar</option>
-                                       <option value="2">2 Gambar</option>
-                                       <option value="4">4 Gambar</option>
+                                       <option value="4" selected>4 Gambar (Cepat)</option>
+                                       <option value="6">6 Gambar (Cepat)</option>
+                                       <option value="12">12 Gambar (Sedang)</option>
+                                       <option value="18">18 Gambar</option>
+                                       <option value="24">24 Gambar</option>
+                                       <option value="32">32 Gambar (Maksimal)</option>
                                    </select>
+                                   <p class="text-xs text-slate-500 mt-1">Semakin banyak gambar, semakin lama waktu pemrosesan.</p>
                                </div>
            
                                <!-- Generate Button -->
@@ -696,7 +727,10 @@
            
                        <!-- Right Panel: Results -->
                        <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
-                           <h2 class="text-xl font-semibold mb-4 text-slate-700">Hasil Foto Travel Anda</h2>
+                           <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-slate-700">Hasil Foto Travel Anda</h2>
+                                <button id="travel-download-all-btn" class="hidden px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Download Semua</button>
+                           </div>
                            <div id="travel-results-container" class="results-grid flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
                                <!-- Initial Placeholder -->
                                <div id="travel-results-placeholder" class="text-center text-slate-500">
@@ -828,10 +862,14 @@
                                <div class="mb-6">
                                    <label for="prewedding-image-count" class="block text-lg font-semibold mb-2 text-slate-700">3. Jumlah Gambar</label>
                                    <select id="prewedding-image-count" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                       <option value="1" selected>1 Gambar</option>
-                                       <option value="2">2 Gambar</option>
-                                       <option value="4">4 Gambar</option>
+                                       <option value="4">4 Gambar (Cepat)</option>
+                                       <option value="6">6 Gambar (Cepat)</option>
+                                       <option value="12">12 Gambar (Sedang)</option>
+                                       <option value="18">18 Gambar</option>
+                                       <option value="24">24 Gambar</option>
+                                       <option value="32">32 Gambar (Maksimal)</option>
                                    </select>
+                                   <p class="text-xs text-slate-500 mt-1">Semakin banyak gambar, semakin lama waktu pemrosesan.</p>
                                </div>
            
                                <!-- Generate Button -->
@@ -845,7 +883,10 @@
            
                        <!-- Right Panel: Results -->
                        <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
-                           <h2 class="text-xl font-semibold mb-4 text-slate-700">Hasil Foto Prewedding Anda</h2>
+                           <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-slate-700">Hasil Foto Prewedding Anda</h2>
+                                <button id="prewedding-download-all-btn" class="hidden px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Download Semua</button>
+                           </div>
                            <div id="prewedding-results-container" class="results-grid flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
                                <!-- Initial Placeholder -->
                                <div id="prewedding-results-placeholder" class="text-center text-slate-500">
@@ -908,7 +949,10 @@
            
                        <!-- Right Panel: Results -->
                        <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
-                           <h2 class="text-xl font-semibold mb-4 text-slate-700">Hasil Restorasi</h2>
+                           <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-slate-700">Hasil Restorasi</h2>
+                                <button id="restoration-download-all-btn" class="hidden px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Download Semua</button>
+                           </div>
                            <div id="restoration-results-container" class="results-grid flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
                                <!-- Initial Placeholder -->
                                <div id="restoration-results-placeholder" class="text-center text-slate-500">

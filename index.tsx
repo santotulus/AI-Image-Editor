@@ -224,6 +224,18 @@ async function generateImage(parts: any[]) {
     throw new Error("Failed to generate image after multiple attempts.");
 }
 
+async function downloadAllImages(imageUrls: string[], prefix: string) {
+    for (let i = 0; i < imageUrls.length; i++) {
+        const link = document.createElement('a');
+        link.href = imageUrls[i];
+        link.download = `${prefix}_${i + 1}_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        // Small delay to ensure browser handles multiple downloads correctly
+        await new Promise(resolve => setTimeout(resolve, 300));
+    }
+}
 
 // --- PRODUCT GENERATOR SCRIPT ---
 const productForm = document.getElementById('generation-form') as HTMLFormElement;
@@ -238,6 +250,7 @@ if (productForm) {
     const errorMessage = document.getElementById('error-message') as HTMLElement;
     const errorDetails = document.getElementById('error-details') as HTMLElement;
     const resultsLoaderText = resultsLoader ? resultsLoader.querySelector('p') : null;
+    const downloadAllBtn = document.getElementById('product-download-all-btn') as HTMLButtonElement;
 
     const customPromptCheckbox = document.getElementById('custom-prompt-checkbox') as HTMLInputElement;
     const customPromptContainer = document.getElementById('custom-prompt-container') as HTMLElement;
@@ -527,6 +540,12 @@ if (productForm) {
         resultsGrid.innerHTML = '';
         if (images.length > 0) {
             resultsPlaceholder.classList.add('hidden');
+            
+            if (downloadAllBtn) {
+                downloadAllBtn.classList.remove('hidden');
+                downloadAllBtn.onclick = () => downloadAllImages(images, 'product_showcase');
+            }
+            
             images.forEach(imageUrl => {
                 const container = document.createElement('div');
                 container.className = 'relative group bg-slate-100 rounded-lg flex items-center justify-center aspect-square';
@@ -561,6 +580,7 @@ if (productForm) {
             resultsGrid.classList.remove('hidden');
         } else {
             resultsPlaceholder.classList.remove('hidden');
+            if (downloadAllBtn) downloadAllBtn.classList.add('hidden');
         }
     }
 
@@ -573,6 +593,7 @@ if (productForm) {
         
         if (isLoading) {
             resultsPlaceholder.classList.add('hidden');
+            if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
         }
         
         errorMessage.classList.add('hidden');
@@ -592,6 +613,7 @@ if (productForm) {
          // Don't hide the grid if there are partial results
          if (resultsGrid.children.length === 0) {
             resultsGrid.classList.add('hidden');
+            if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
          }
          errorMessage.classList.remove('hidden');
          errorDetails.textContent = message;
@@ -608,6 +630,7 @@ if (modelForm) {
     const statusContainer = document.getElementById('model-page-status') as HTMLElement;
     const outputContainer = document.getElementById('model-page-output-container') as HTMLElement;
     const imageCountSelect = document.getElementById('model-image-count') as HTMLSelectElement;
+    const downloadAllBtn = document.getElementById('model-download-all-btn') as HTMLButtonElement;
 
     let modelPageMimeType = "image/jpeg";
 
@@ -662,6 +685,7 @@ if (modelForm) {
 
         generateBtn.disabled = isLoading;
         if (isLoading) {
+            if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
             statusContainer.innerHTML = `
                 <div class="text-center text-slate-600">
                      <div class="spinner w-12 h-12 mx-auto rounded-full border-4 border-slate-300"></div>
@@ -682,6 +706,16 @@ if (modelForm) {
         if(!outputContainer) return;
         setModelLoadingState(false, '');
         outputContainer.innerHTML = '';
+        
+        if (images.length > 0) {
+            if (downloadAllBtn) {
+                downloadAllBtn.classList.remove('hidden');
+                downloadAllBtn.onclick = () => downloadAllImages(images, 'model_photo');
+            }
+        } else {
+             if (downloadAllBtn) downloadAllBtn.classList.add('hidden');
+        }
+
         images.forEach(imageUrl => {
             const container = document.createElement('div');
             container.className = 'relative group bg-slate-100 rounded-lg flex items-center justify-center aspect-square';
@@ -726,6 +760,7 @@ if (pasPhotoForm) {
     const errorMessage = document.getElementById('pas-photo-error-message') as HTMLElement;
     const errorDetails = document.getElementById('pas-photo-error-details') as HTMLElement;
     const resultsLoaderText = resultsLoader ? resultsLoader.querySelector('p') : null;
+    const downloadAllBtn = document.getElementById('pas-photo-download-all-btn') as HTMLButtonElement;
     
     let pasPhotoMimeType = "image/jpeg";
 
@@ -814,6 +849,7 @@ if (pasPhotoForm) {
             resultsPlaceholder.classList.add('hidden');
             errorMessage.classList.add('hidden');
             resultsGrid.classList.add('hidden');
+            if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
         }
     }
     
@@ -823,6 +859,7 @@ if (pasPhotoForm) {
         resultsLoader.classList.add('hidden');
         if (resultsGrid.children.length === 0) {
             resultsGrid.classList.add('hidden');
+            if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
         }
         errorMessage.classList.remove('hidden');
         errorDetails.textContent = message;
@@ -832,6 +869,15 @@ if (pasPhotoForm) {
         if (!resultsGrid) return;
         resultsGrid.innerHTML = '';
         
+        if (images.length > 0) {
+            if (downloadAllBtn) {
+                downloadAllBtn.classList.remove('hidden');
+                downloadAllBtn.onclick = () => downloadAllImages(images, 'pas_photo');
+            }
+        } else {
+            if (downloadAllBtn) downloadAllBtn.classList.add('hidden');
+        }
+
         const sizeClassMap: { [key: string]: { container: string, image: string } } = {
             '2x3': { container: 'aspect-[2/3] w-full', image: 'object-cover' },
             '3x4': { container: 'aspect-[3/4] w-full', image: 'object-cover' },
@@ -885,6 +931,7 @@ if (travelForm) {
     const errorMessage = document.getElementById('travel-error-message') as HTMLElement;
     const errorDetails = document.getElementById('travel-error-details') as HTMLElement;
     const resultsLoaderText = resultsLoader ? resultsLoader.querySelector('p') : null;
+    const downloadAllBtn = document.getElementById('travel-download-all-btn') as HTMLButtonElement;
     
     let travelFile1: { base64: string, mimeType: string } | null = null;
     let travelFile2: { base64: string, mimeType: string } | null = null;
@@ -956,16 +1003,25 @@ if (travelForm) {
         setTravelLoadingState(true);
 
         const bgValue = (document.getElementById('travel-bg-select') as HTMLSelectElement).value;
+        const seasonValue = (document.getElementById('travel-season-select') as HTMLSelectElement).value;
         const imageCount = parseInt((document.getElementById('travel-image-count') as HTMLSelectElement).value, 10);
         
         const backgroundMap: { [key: string]: string } = {
             'eiffel': 'the Eiffel Tower in Paris, France',
             'fuji': 'Mount Fuji in Japan',
             'sakura': 'a beautiful scene of cherry blossoms in Japan',
+            'shinjuku': 'the vibrant neon-lit streets of Shinjuku, Tokyo at night',
+            'shirakawago': 'the snowy historic village of Shirakawa-go in Japan during winter',
             'windmill': 'classic Dutch windmills in the Netherlands',
+            'big_ben': 'the iconic Big Ben and Houses of Parliament in London, UK',
+            'abbey_road': 'the famous Abbey Road crossing in London, UK',
             'pisa': 'the Leaning Tower of Pisa in Italy',
             'liberty': 'the Statue of Liberty in New York, USA',
+            'namsan': 'the N Seoul Tower (Namsan Tower) in Seoul, South Korea, with a city view',
+            'merlion': 'the Merlion statue with the Marina Bay Sands in the background in Singapore',
+            'petronas': 'the majestic Petronas Twin Towers in Kuala Lumpur, Malaysia',
             'kremlin': 'the Kremlin in Moscow, Russia',
+            'pyramids': 'the Great Pyramids of Giza in Egypt',
             'opera_house': 'the Sydney Opera House in Australia',
             'dotonbori': 'the vibrant and bustling Dotonbori district in Osaka, Japan at night with all the neon lights',
             'shibuya': 'the iconic Shibuya Crossing in Tokyo, Japan, with crowds of people',
@@ -980,10 +1036,18 @@ if (travelForm) {
             'eiffel': 'stylish and chic European city wear, like a trench coat or a fashionable jacket',
             'fuji': 'appropriate outdoor or hiking gear suitable for a cool mountain climate',
             'sakura': 'light spring clothing, like a light jacket or sweater, suitable for a pleasant day in Japan',
+            'shinjuku': 'stylish urban nightlife attire, trendy and cool, perfect for Tokyo streets',
+            'shirakawago': 'warm winter clothing, heavy coats, scarves, and boots suitable for snowy weather',
             'windmill': 'comfortable and casual European travel wear, perhaps with a light jacket for a breezy day',
+            'big_ben': 'smart casual British style, perhaps a trench coat or a blazer',
+            'abbey_road': 'casual, retro-inspired walking attire, or just comfortable street wear',
             'pisa': 'summer tourist attire, like a light shirt or dress, suitable for a sunny day in Italy',
             'liberty': 'casual American tourist style, like jeans and a t-shirt or a light jacket',
+            'namsan': 'stylish casual Korean fashion, trendy and neat',
+            'merlion': 'light, breathable summer clothing suitable for tropical Singapore weather',
+            'petronas': 'smart casual or urban travel wear suitable for warm weather',
             'kremlin': 'warm and stylish clothing suitable for Moscow, such as a smart coat or jacket',
+            'pyramids': 'light, breathable desert travel clothing, sunglasses, and maybe a hat',
             'opera_house': 'stylish, modern city wear suitable for a sunny day in Sydney',
             'dotonbori': 'trendy, fashionable Japanese streetwear, perfect for a night out in a bustling city',
             'shibuya': 'modern, stylish Tokyo street fashion, like you are part of the vibrant crowd',
@@ -994,13 +1058,27 @@ if (travelForm) {
         };
         const clothingDescription = clothingMap[bgValue];
 
+        let seasonPrompt = "";
+        let clothingSeasonInstruction = "";
+
+        if (seasonValue === 'winter') {
+            seasonPrompt = " The season must be Winter, featuring snow, cold weather, and a wintry atmosphere.";
+            clothingSeasonInstruction = " The clothing MUST be adapted for Winter (warm coats, scarves, layers) regardless of the standard location attire.";
+        } else if (seasonValue === 'spring') {
+            seasonPrompt = " The season must be Spring, featuring blooming flowers, fresh greenery, and pleasant weather.";
+            clothingSeasonInstruction = " The clothing MUST be adapted for Spring (light jackets, fresh colors).";
+        } else if (seasonValue === 'autumn') {
+            seasonPrompt = " The season must be Autumn, featuring colorful fall foliage (orange, red, yellow leaves) and a cozy atmosphere.";
+            clothingSeasonInstruction = " The clothing MUST be adapted for Autumn (stylish layers, earth tones, light coats).";
+        }
+
         const personDescription = travelFile2
             ? "the two people from the provided images, placing them together naturally (e.g., as friends or a couple)"
             : "the person from the provided image";
 
         const prompt = `Create a realistic travel photograph. Take ${personDescription} and place them in a new scene.
-1. **Background:** The new background must be a beautiful, clear shot of ${bgDescription}.
-2. **Attire:** IMPORTANT: Change the person's (or people's) clothing to be appropriate for the location. Dress them in ${clothingDescription}.
+1. **Background:** The new background must be a beautiful, clear shot of ${bgDescription}.${seasonPrompt}
+2. **Attire:** IMPORTANT: Change the person's (or people's) clothing to be appropriate for the location. Dress them in ${clothingDescription}.${clothingSeasonInstruction}
 3. **Integration:** The people must be integrated seamlessly into the new environment. It is crucial to match the environmental lighting, shadows, and perspective perfectly to make it look authentic.
 4. **HIGHEST PRIORITY (Preservation):** The faces, hair, and distinct facial features from the original images must be preserved with 100% accuracy. DO NOT alter their facial appearance.`;
 
@@ -1045,6 +1123,7 @@ if (travelForm) {
             errorMessage.classList.add('hidden');
             resultsGrid.classList.add('hidden');
             resultsGrid.innerHTML = '';
+            if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
         }
     }
     
@@ -1055,6 +1134,7 @@ if (travelForm) {
         resultsLoader.classList.add('hidden');
         if (resultsGrid.children.length === 0) {
             resultsGrid.classList.add('hidden');
+            if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
         }
         errorMessage.classList.remove('hidden');
         errorDetails.textContent = message;
@@ -1065,6 +1145,16 @@ if (travelForm) {
 
         setTravelLoadingState(false);
         resultsGrid.innerHTML = '';
+        
+        if (images.length > 0) {
+            if (downloadAllBtn) {
+                downloadAllBtn.classList.remove('hidden');
+                downloadAllBtn.onclick = () => downloadAllImages(images, 'travel_photo');
+            }
+        } else {
+            if (downloadAllBtn) downloadAllBtn.classList.add('hidden');
+        }
+
         images.forEach(imageUrl => {
             const container = document.createElement('div');
             container.className = 'relative group bg-slate-100 rounded-lg flex items-center justify-center aspect-[4/5]';
@@ -1111,6 +1201,7 @@ if (preweddingForm) {
     const errorMessage = document.getElementById('prewedding-error-message') as HTMLElement;
     const errorDetails = document.getElementById('prewedding-error-details') as HTMLElement;
     const resultsLoaderText = resultsLoader ? resultsLoader.querySelector('p') : null;
+    const downloadAllBtn = document.getElementById('prewedding-download-all-btn') as HTMLButtonElement;
     
     const locationTypeOutdoorRadio = document.getElementById('prewedding-location-type-outdoor') as HTMLInputElement;
     const locationTypeIndoorRadio = document.getElementById('prewedding-location-type-indoor') as HTMLInputElement;
@@ -1301,6 +1392,7 @@ Do not generate any NSFW, violent, or inappropriate content.`;
             errorMessage.classList.add('hidden');
             resultsGrid.classList.add('hidden');
             resultsGrid.innerHTML = '';
+            if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
         }
     }
     
@@ -1311,6 +1403,7 @@ Do not generate any NSFW, violent, or inappropriate content.`;
         resultsLoader.classList.add('hidden');
         if (resultsGrid.children.length === 0) {
             resultsGrid.classList.add('hidden');
+            if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
         }
         errorMessage.classList.remove('hidden');
         errorDetails.textContent = message;
@@ -1321,6 +1414,16 @@ Do not generate any NSFW, violent, or inappropriate content.`;
 
         setPreweddingLoadingState(false);
         resultsGrid.innerHTML = '';
+        
+        if (images.length > 0) {
+            if (downloadAllBtn) {
+                downloadAllBtn.classList.remove('hidden');
+                downloadAllBtn.onclick = () => downloadAllImages(images, 'prewedding_photo');
+            }
+        } else {
+            if (downloadAllBtn) downloadAllBtn.classList.add('hidden');
+        }
+
         images.forEach(imageUrl => {
             const container = document.createElement('div');
             container.className = 'relative group bg-slate-100 rounded-lg flex items-center justify-center aspect-[4/5]';
@@ -1367,6 +1470,7 @@ if (restorationForm) {
     const resultsGrid = document.getElementById('restoration-results-grid') as HTMLElement;
     const errorMessage = document.getElementById('restoration-error-message') as HTMLElement;
     const errorDetails = document.getElementById('restoration-error-details') as HTMLElement;
+    const downloadAllBtn = document.getElementById('restoration-download-all-btn') as HTMLButtonElement;
     
     let restorationFile: { base64: string, mimeType: string } | null = null;
 
@@ -1426,6 +1530,7 @@ The final result should be a total restoration, making the photo look as if it w
             errorMessage.classList.add('hidden');
             resultsGrid.classList.add('hidden');
             resultsGrid.innerHTML = '';
+            if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
         }
     }
     
@@ -1435,6 +1540,7 @@ The final result should be a total restoration, making the photo look as if it w
         resultsPlaceholder.classList.add('hidden');
         resultsLoader.classList.add('hidden');
         resultsGrid.classList.add('hidden');
+        if(downloadAllBtn) downloadAllBtn.classList.add('hidden');
         errorMessage.classList.remove('hidden');
         errorDetails.textContent = message;
     }
@@ -1444,6 +1550,16 @@ The final result should be a total restoration, making the photo look as if it w
 
         setRestorationLoadingState(false);
         resultsGrid.innerHTML = '';
+        
+        if (images.length > 0) {
+            if (downloadAllBtn) {
+                downloadAllBtn.classList.remove('hidden');
+                downloadAllBtn.onclick = () => downloadAllImages(images, 'restored_photo');
+            }
+        } else {
+            if (downloadAllBtn) downloadAllBtn.classList.add('hidden');
+        }
+
         images.forEach(imageUrl => {
             const container = document.createElement('div');
             container.className = 'relative group bg-slate-100 rounded-lg flex items-center justify-center aspect-auto';
