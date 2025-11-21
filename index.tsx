@@ -935,9 +935,15 @@ if (travelForm) {
     
     let travelFile1: { base64: string, mimeType: string } | null = null;
     let travelFile2: { base64: string, mimeType: string } | null = null;
+    let travelFile3: { base64: string, mimeType: string } | null = null;
+    let travelFile4: { base64: string, mimeType: string } | null = null;
+    let travelFile5: { base64: string, mimeType: string } | null = null;
 
     const deleteBtn1 = document.getElementById('travel-delete-btn-1') as HTMLButtonElement;
     const deleteBtn2 = document.getElementById('travel-delete-btn-2') as HTMLButtonElement;
+    const deleteBtn3 = document.getElementById('travel-delete-btn-3') as HTMLButtonElement;
+    const deleteBtn4 = document.getElementById('travel-delete-btn-4') as HTMLButtonElement;
+    const deleteBtn5 = document.getElementById('travel-delete-btn-5') as HTMLButtonElement;
 
     const resetUploader = (
         fileVarSetter: (val: null) => void,
@@ -982,6 +988,48 @@ if (travelForm) {
             );
         });
     }
+    
+    if(deleteBtn3) {
+        deleteBtn3.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            resetUploader(
+                (val) => { travelFile3 = val; },
+                'travel-upload-input-3',
+                'travel-image-preview-3',
+                'travel-upload-prompt-3',
+                deleteBtn3
+            );
+        });
+    }
+
+    if(deleteBtn4) {
+        deleteBtn4.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            resetUploader(
+                (val) => { travelFile4 = val; },
+                'travel-upload-input-4',
+                'travel-image-preview-4',
+                'travel-upload-prompt-4',
+                deleteBtn4
+            );
+        });
+    }
+
+    if(deleteBtn5) {
+        deleteBtn5.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            resetUploader(
+                (val) => { travelFile5 = val; },
+                'travel-upload-input-5',
+                'travel-image-preview-5',
+                'travel-upload-prompt-5',
+                deleteBtn5
+            );
+        });
+    }
 
     setupFileUploader('travel-upload-input-1', 'travel-image-preview-1', 'travel-upload-prompt-1', (base64, fileType) => {
         travelFile1 = { base64, mimeType: fileType };
@@ -992,11 +1040,28 @@ if (travelForm) {
         travelFile2 = { base64, mimeType: fileType };
         if(deleteBtn2) deleteBtn2.classList.remove('hidden');
     });
+    
+    setupFileUploader('travel-upload-input-3', 'travel-image-preview-3', 'travel-upload-prompt-3', (base64, fileType) => {
+        travelFile3 = { base64, mimeType: fileType };
+        if(deleteBtn3) deleteBtn3.classList.remove('hidden');
+    });
+
+    setupFileUploader('travel-upload-input-4', 'travel-image-preview-4', 'travel-upload-prompt-4', (base64, fileType) => {
+        travelFile4 = { base64, mimeType: fileType };
+        if(deleteBtn4) deleteBtn4.classList.remove('hidden');
+    });
+
+    setupFileUploader('travel-upload-input-5', 'travel-image-preview-5', 'travel-upload-prompt-5', (base64, fileType) => {
+        travelFile5 = { base64, mimeType: fileType };
+        if(deleteBtn5) deleteBtn5.classList.remove('hidden');
+    });
 
     travelForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!travelFile1) {
-            showModal('Harap unggah setidaknya foto pertama.');
+        const files = [travelFile1, travelFile2, travelFile3, travelFile4, travelFile5].filter(f => f !== null);
+
+        if (files.length === 0) {
+            showModal('Harap unggah setidaknya satu foto.');
             return;
         }
         
@@ -1072,9 +1137,12 @@ if (travelForm) {
             clothingSeasonInstruction = " The clothing MUST be adapted for Autumn (stylish layers, earth tones, light coats).";
         }
 
-        const personDescription = travelFile2
-            ? "the two people from the provided images, placing them together naturally (e.g., as friends or a couple)"
-            : "the person from the provided image";
+        let personDescription = "the person from the provided image";
+        if (files.length === 2) {
+            personDescription = "the two people from the provided images, placing them together naturally (e.g., as friends or a couple)";
+        } else if (files.length > 2) {
+             personDescription = `the ${files.length} people from the provided images, placing them together naturally as a group`;
+        }
 
         const prompt = `Create a realistic travel photograph. Take ${personDescription} and place them in a new scene.
 1. **Background:** The new background must be a beautiful, clear shot of ${bgDescription}.${seasonPrompt}
@@ -1083,12 +1151,9 @@ if (travelForm) {
 4. **HIGHEST PRIORITY (Preservation):** The faces, hair, and distinct facial features from the original images must be preserved with 100% accuracy. DO NOT alter their facial appearance.`;
 
         const parts: any[] = [{ text: prompt }];
-        if (travelFile1) {
-            parts.push({ inlineData: { mimeType: travelFile1.mimeType, data: travelFile1.base64 } });
-        }
-        if (travelFile2) {
-            parts.push({ inlineData: { mimeType: travelFile2.mimeType, data: travelFile2.base64 } });
-        }
+        files.forEach(file => {
+             parts.push({ inlineData: { mimeType: file!.mimeType, data: file!.base64 } });
+        });
         
         const generatedImages: string[] = [];
         try {
